@@ -1,0 +1,32 @@
+name: Задача проекта
+description: Проверяемая задача с ответственным, сроком и критериями приёмки
+title: "[BP] "
+body:
+  - type: input
+    id: owner
+    attributes:
+      label: Ответственный
+      placeholder: Вадим / Ника / Алексей
+    validations:
+      required: true
+  - type: textarea
+    id: work
+    attributes:
+      label: Что сделать
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Критерии приёмки и проверка
+      placeholder: "- [ ] Проверяемый результат"
+    validations:
+      required: true
+  - type: input
+    id: dependencies
+    attributes:
+      label: Зависимости
+  - type: input
+    id: due
+    attributes:
+      label: Срок (Москва) и milestone

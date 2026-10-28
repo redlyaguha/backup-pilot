@@ -1,0 +1,24 @@
+# Шаблон из задания. Pipeline продукта ещё не реализован: BP-21, BP-23.
+# Учебный шаблон: адаптируйте команды под выбранный стек.
+stages:
+  - lint
+  - test
+  - package
+
+lint:
+  stage: lint
+  script:
+    - ./scripts/lint.sh
+
+test:
+  stage: test
+  script:
+    - ./scripts/test.sh
+
+package:
+  stage: package
+  script:
+    - ./scripts/package.sh
+  artifacts:
+    paths:
+      - dist/

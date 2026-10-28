@@ -1,0 +1,7 @@
+# Проектный формат, будет реализован в BP-04. Только учебные пути.
+name = "demo"
+source = "/srv/backup-pilot-demo/source"
+destination = "/srv/backup-pilot-demo/backups"
+exclude = ["*.tmp", "cache/**"]
+keep_last = 7
+schedule = "daily"
