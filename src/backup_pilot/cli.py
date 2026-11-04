@@ -4,8 +4,9 @@ from pathlib import Path
 import sys
 
 from . import __version__
+from .backup import execute_backup, list_snapshots, plan_backup
 from .errors import BackupPilotError
-from .profiles import list_profiles, load_profile
+from .profiles import list_profiles, load_named_profile, load_profile
 
 
 def parser() -> argparse.ArgumentParser:
@@ -19,18 +20,31 @@ def parser() -> argparse.ArgumentParser:
     operations.add_parser('list', help='показать профили')
     validate = operations.add_parser('validate', help='проверить TOML без записи')
     validate.add_argument('--config', required=True, type=Path)
+    for name, help_text in (('run', 'создать отдельную копию'), ('snapshots', 'перечислить завершённые копии')):
+        command = commands.add_parser(name, help=help_text)
+        command.add_argument('profile', help='имя TOML-профиля без расширения')
     return result
 
 
 def main(argv=None) -> int:
     args = parser().parse_args(argv)
     try:
-        if args.operation == 'list':
-            for profile in list_profiles(args.profiles_dir):
-                print(profile.name)
+        if args.command == 'profiles':
+            if args.operation == 'list':
+                for profile in list_profiles(args.profiles_dir):
+                    print(profile.name)
+            else:
+                profile = load_profile(args.config)
+                print(f'Профиль {profile.name}: OK')
         else:
-            profile = load_profile(args.config)
-            print(f'Профиль {profile.name}: OK')
+            profile = load_named_profile(args.profiles_dir, args.profile)
+            if args.command == 'run':
+                snapshot = execute_backup(plan_backup(profile))
+                print(f'Копирование завершено: {snapshot}')
+                print('SHA-256 ещё не проверен: модуль integrity — BP-09.')
+            else:
+                for snapshot in list_snapshots(profile):
+                    print(snapshot.name)
         return 0
     except BackupPilotError as exc:
         print(f'Ошибка: {exc}', file=sys.stderr)
