@@ -1,0 +1,119 @@
+Source: PR #37, feature/BP-05-backup, pinned commit 43c7300123432be5ec37cbd2434a907e49cc56c0.
+Preflight NOT RUN applies only to its own backup stage; the actual scenario follows below.
+SHA-256 comparison is performed by the verifier; product integrity BP-09 is not implemented.
+
+# BP-06: installed Astra runtime and real backup
+UTC: 2026-11-05 09:07:45
+Execution identity: bpuser
+Kernel: 6.1.90-1-generic
+Root: /dev/vda2 ext4
+BP-06 runtime preflight (not product acceptance)
+Python: 3.11.2
+Architecture: x86_64
+Live boot: no
+Astra: 1.8.1.6
+Python >= 3.11: OK
+tomllib: OK
+Source commit: 43c7300123432be5ec37cbd2434a907e49cc56c0
+External imports (static scan): none
+Dynamic imports and system commands require manual review.
+CLI probe: --help
+usage: backup-pilot [-h] [--version] [--profiles-dir PROFILES_DIR]
+                    {profiles,run,snapshots} ...
+
+Менеджер локальных резервных копий
+
+positional arguments:
+  {profiles,run,snapshots}
+    profiles            список и проверка профилей
+    run                 создать отдельную копию
+    snapshots           перечислить завершённые копии
+
+options:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+  --profiles-dir PROFILES_DIR
+                        каталог именных TOML-профилей
+CLI probe: --version
+backup-pilot 0.1.0
+Backup scenario: NOT RUN (follow docs/astra-prototype.md)
+Preflight OK; BP-06 still requires actual backup evidence.
+PASS: unprivileged execution
+PASS: Astra SE 1.8 x86-64 target
+Astra: 1.8.1.6
+Python: 3.11.2
+PASS: installed disk system, not Live
+Prototype commit: 43c7300123432be5ec37cbd2434a907e49cc56c0
+PASS: tracked prototype files unchanged
+PASS: expected demo profile and exclusions
+PASS: BP-02 sample files present
+$ backup-pilot --help
+usage: backup-pilot [-h] [--version] [--profiles-dir PROFILES_DIR]
+                    {profiles,run,snapshots} ...
+
+Менеджер локальных резервных копий
+
+positional arguments:
+  {profiles,run,snapshots}
+    profiles            список и проверка профилей
+    run                 создать отдельную копию
+    snapshots           перечислить завершённые копии
+
+options:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+  --profiles-dir PROFILES_DIR
+                        каталог именных TOML-профилей
+exit: 0
+PASS: CLI exit code matches expected 0
+$ backup-pilot --version
+backup-pilot 0.1.0
+exit: 0
+PASS: CLI exit code matches expected 0
+$ backup-pilot profiles validate --config /opt/backup-pilot-prototype/examples/profile.toml
+Профиль demo: OK
+exit: 0
+PASS: CLI exit code matches expected 0
+$ backup-pilot --profiles-dir <fixtures>/profiles snapshots demo
+exit: 0
+PASS: CLI exit code matches expected 0
+$ backup-pilot --profiles-dir <fixtures>/profiles run demo
+Копирование завершено: /srv/backup-pilot-demo/backups/demo/20261105T090817721259Z-8cc1ee8f
+SHA-256 ещё не проверен: модуль integrity — BP-09.
+exit: 0
+PASS: CLI exit code matches expected 0
+$ backup-pilot --profiles-dir <fixtures>/profiles snapshots demo
+20261105T090817721259Z-8cc1ee8f
+exit: 0
+PASS: CLI exit code matches expected 0
+PASS: one new completed snapshot listed
+PASS: completed snapshot identifier
+PASS: copied bytes match source; both exclusions applied
+PASS: snapshot completion metadata matches listing
+PASS: source file hashes unchanged
+Completed snapshot: 20261105T090817721259Z-8cc1ee8f
+SHA256: 7daca2095d0438260fa849183dfc67faa459fdf4936e1bc91eec6b281b27e4c2 bin/sample.bin
+SHA256: d1a3d8976650501641dd9b4ae1851374bf749b55859612f9b365bf450faa5086 docs/readme.txt
+$ backup-pilot --profiles-dir <fixtures>/profiles run bp06-denied
+Ошибка доступа: <fixtures>/failure-source/z.txt. Проверьте права пользователя.
+exit: 3
+PASS: CLI exit code matches expected 3
+$ backup-pilot --profiles-dir <fixtures>/profiles snapshots bp06-denied
+exit: 0
+PASS: CLI exit code matches expected 0
+PASS: failed copy absent from completed snapshot listing
+PASS: actual incomplete copy retained without success metadata
+BP-06 scenario: PASS (integrity/restore/retention modules are outside this check)
+
+# Prototype tests on installed Astra
+..............
+----------------------------------------------------------------------
+Ran 14 tests in 4.944s
+
+OK
+
+# Verifier provenance
+d616a0b06cf67d11bc4405b556b6269ec0ced0eb314693cb21c5262cbf315639  /opt/backup-pilot-stand/check-runtime.py
+1936cf93ac334973ae01551cd25fb01eca60cee6e609548be6f73e6dd990f575  /opt/backup-pilot-stand/verify-prototype.py
+
+BP06_INSTALLED_SCENARIO_AND_TESTS_PASS

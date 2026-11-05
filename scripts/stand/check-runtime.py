@@ -14,7 +14,10 @@ def check(repo: Path, probe: bool = False) -> int:
     print('Python:', platform.python_version())
     print('Architecture:', platform.machine())
     build = Path('/etc/astra/build_version')
-    target = build.is_file() and platform.machine() == 'x86_64'
+    build_version = build.read_text().strip() if build.is_file() else ''
+    live = Path('/proc/cmdline').is_file() and 'boot=live' in Path('/proc/cmdline').read_text().split()
+    target = build_version.split('.')[:2] == ['1', '8'] and platform.machine() == 'x86_64' and not live
+    print('Live boot:', 'yes (acceptance NOT RUN)' if live else 'no')
     print('Astra:', build.read_text().strip() if build.is_file() else 'NOT RUN (not Astra)')
     print('Python >= 3.11:', 'OK' if sys.version_info >= (3, 11) else 'FAIL')
     print('tomllib:', 'OK' if importlib.util.find_spec('tomllib') else 'FAIL')
@@ -85,7 +88,7 @@ def check(repo: Path, probe: bool = False) -> int:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--repo', type=Path, default=Path(__file__).resolve().parents[2])
+    parser.add_argument('--repo', type=Path, default=Path(__file__).resolve().parent.parent.parent)
     parser.add_argument('--probe-cli', action='store_true')
     args = parser.parse_args()
     sys.exit(check(args.repo.resolve(), args.probe_cli))
