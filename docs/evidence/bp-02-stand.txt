@@ -1,0 +1,40 @@
+# Backup Pilot — стенд BP-02
+Собрано (UTC): 2026-11-05 09:01
+
+## Система
+Astra build_version: 1.8.1.6
+OS: Astra Linux (VERSION_ID=1.8_x86-64)
+Ядро: 6.1.90-1-generic, архитектура: x86_64
+Виртуализация: qemu
+Загрузка: UEFI
+Корневая ФС: /dev/vda2 ext4
+Загрузка с диска: проверить SOURCE выше, ожидается /dev/vda2 ext4
+Режим защищённости: base(orel)
+
+## Инструменты
+Python: Python 3.11.2
+tomllib: OK
+systemd: systemd 252 (252.17-1~deb12u1astra.se1+ci13)
+dpkg: Debian 'dpkg' package management program version 1.21.22 (amd64).
+dpkg-deb: Debian 'dpkg-deb' package archive backend version 1.21.22 (amd64).
+apt: apt 2.6.1 (amd64)
+dpkg audit: OK (нет незавершённых пакетов)
+
+## Учебный пользователь
+bpuser: uid=1001, группы: bpuser
+Привилегии: OK (нет sudo/astra-admin/root)
+
+## Учебные каталоги
+drwxr-xr-x root:root /srv/backup-pilot-demo
+drwxr-x--- bpuser:bpuser /srv/backup-pilot-demo/source
+drwxr-x--- bpuser:bpuser /srv/backup-pilot-demo/backups
+
+## Тестовые файлы source (SHA-256)
+7daca2095d0438260fa849183dfc67faa459fdf4936e1bc91eec6b281b27e4c2  ./bin/sample.bin
+e1ef2d2eb4c3868c58f0cccf12d65610fcbf40ba88a1853f1a7fc6d8e00e724c  ./cache/item.txt
+d1a3d8976650501641dd9b4ae1851374bf749b55859612f9b365bf450faa5086  ./docs/readme.txt
+183a4b8700b3da6e332fac8c3276da224c088160b24fb4be341dfa69a76ab68d  ./notes.tmp
+
+## SHA-256 применённых скриптов
+ef16747ca952ba046fce1767ef2f1b347b44bb5e37a9a832ba647cc877fcb5e7  /opt/backup-pilot-stand/collect-stand-info.sh
+d18912227e5d525edd09595975781e85107ee1260f934fbe62d7a403a65e7b2c  /opt/backup-pilot-stand/prepare-stand.sh

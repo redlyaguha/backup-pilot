@@ -16,6 +16,8 @@ usage() {
     echo "Переменные: BP_USER (по умолчанию bpuser), BP_ROOT (по умолчанию /srv/backup-pilot-demo)" >&2
 }
 
+[ "$#" -le 1 ] || { usage; exit 2; }
+
 APPLY=0
 case "${1:-}" in
     "") ;;
@@ -42,12 +44,31 @@ if [ "$APPLY" -eq 1 ] && [ "$(id -u)" -ne 0 ]; then
 fi
 command -v python3 >/dev/null 2>&1 || fail "не найден python3, нужен для учебного бинарного файла" 4
 
+# Проверить пути до любых изменений от root: /srv/../... и symlink недопустимы.
+python3 - "$BP_ROOT" "$BP_USER" <<'CHECK_PATHS' || fail "небезопасные параметры стенда" 2
+from pathlib import Path
+import re
+import sys
+root = Path(sys.argv[1])
+if ('..' in root.parts or not root.is_absolute()
+        or root == Path('/srv') or Path('/srv') not in root.parents):
+    raise SystemExit('BP_ROOT: нужен подкаталог /srv без ..')
+if not re.fullmatch(r'[a-z_][a-z0-9_-]{0,30}', sys.argv[2]) or sys.argv[2] == 'root':
+    raise SystemExit('BP_USER: нужно имя отдельного учебного пользователя')
+for suffix in ('', 'source', 'backups', 'source/docs', 'source/cache', 'source/bin',
+               'source/docs/readme.txt', 'source/notes.tmp', 'source/cache/item.txt',
+               'source/bin/sample.bin'):
+    path = root / suffix
+    if any(part.is_symlink() for part in (*path.parents, path)):
+        raise SystemExit('Symlink в учебном пути: ' + str(path))
+CHECK_PATHS
+
 # Пользователь без пароля и без административных групп: вход только через sudo -iu.
 if id "$BP_USER" >/dev/null 2>&1; then
     echo "пользователь $BP_USER уже существует, не изменяется"
 else
-    step "useradd --create-home --shell /bin/bash $BP_USER"
-    [ "$APPLY" -eq 0 ] || useradd --create-home --shell /bin/bash "$BP_USER"
+    step "useradd --create-home --user-group --shell /bin/bash $BP_USER"
+    [ "$APPLY" -eq 0 ] || useradd --create-home --user-group --shell /bin/bash "$BP_USER"
 fi
 
 make_dir() { # путь владелец права

@@ -45,6 +45,12 @@ report() {
     fi
     echo "Ядро: $(uname -r), архитектура: $(uname -m)"
     echo "Виртуализация: $(first_line systemd-detect-virt)"
+    if [ -d /sys/firmware/efi ]; then echo "Загрузка: UEFI"; else echo "Загрузка: BIOS"; fi
+    echo "Корневая ФС: $(first_line findmnt -n -o SOURCE,FSTYPE /)"
+    case "$(findmnt -n -o FSTYPE /)" in
+        overlay|squashfs) echo "Загрузка с диска: FAIL (Live root)" ;;
+        *) echo "Загрузка с диска: проверить SOURCE выше, ожидается /dev/vda2 ext4" ;;
+    esac
     echo "Режим защищённости: $(as_root astra-modeswitch getname)"
     echo
     echo "## Инструменты"
@@ -58,6 +64,9 @@ report() {
     echo "dpkg: $(first_line dpkg --version)"
     echo "dpkg-deb: $(first_line dpkg-deb --version)"
     echo "apt: $(first_line apt --version)"
+    audit=$(dpkg --audit 2>&1) || audit="ERROR: $audit"
+    if [ -z "$audit" ]; then echo "dpkg audit: OK (нет незавершённых пакетов)";
+    else echo "dpkg audit: FAIL $audit"; fi
     echo
     echo "## Учебный пользователь"
     if id "$BP_USER" >/dev/null 2>&1; then
