@@ -1,5 +1,10 @@
 import contextlib
 import io
+import os
+from pathlib import Path
+import subprocess
+import sys
+import unittest
 from unittest.mock import patch
 
 from backup_pilot.cli import main
@@ -9,6 +14,40 @@ from helpers import ProfileCase
 
 
 class ProfilesTest(ProfileCase):
+    def profile_commands(self):
+        return [
+            ['profiles', 'validate', '--config', str(self.config)],
+            ['--profiles-dir', str(self.profiles), 'profiles', 'list'],
+            ['--profiles-dir', str(self.profiles), 'run', 'demo'],
+        ]
+
+    def assert_non_regular_profile_rejected(self):
+        with patch.object(Path, 'open', side_effect=AssertionError('opened a special profile')):
+            with self.assertRaises(BackupPilotError) as error:
+                load_profile(self.config)
+        self.assertEqual(error.exception.code, 2)
+        launcher = Path(__file__).resolve().parents[1] / 'backup-pilot'
+        for command in self.profile_commands():
+            with self.subTest(command=command):
+                result = subprocess.run([sys.executable, '-B', str(launcher), *command],
+                                        capture_output=True, text=True, timeout=5)
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertTrue(result.stderr.strip())
+                self.assertNotIn('Traceback', result.stderr)
+                self.assertEqual(result.stdout, '')
+        self.assertFalse(self.destination.exists())
+
+    def test_directory_profile_is_configuration_error(self):
+        self.config.unlink()
+        self.config.mkdir()
+        self.assert_non_regular_profile_rejected()
+
+    @unittest.skipUnless(hasattr(os, 'mkfifo'), 'FIFO test requires Unix')
+    def test_fifo_profile_is_configuration_error_without_blocking(self):
+        self.config.unlink()
+        os.mkfifo(self.config)
+        self.assert_non_regular_profile_rejected()
+
     def test_load_and_list(self):
         profile = load_profile(self.config)
         self.assertEqual(profile.source, self.source)
