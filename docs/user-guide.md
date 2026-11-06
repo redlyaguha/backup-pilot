@@ -5,6 +5,21 @@ snapshots и run --dry-run. Проверенные команды исходно
 Установочного пакета, verify/restore/prune/schedule ещё нет. Их интерфейсы ниже —
 проектные; полная проверка руководства остаётся BP-19 и BP-26.
 
+## Формат preview копирования
+
+`run <profile> --dry-run` выводит пути в формате JSON-строк. Например:
+
+```text
+Назначение: "/srv/backup-pilot-demo/backups/demo/<new-snapshot>/data"
+mkdir "."
+copy "readme.txt"
+copy "a\ncopy nonexistent.txt"
+```
+
+Последняя строка — один файл с переводом строки в имени. Управляющие символы,
+кавычки, обратный слеш и не-ASCII символы экранируются; каждая операция занимает
+одну строку. Preview не создаёт каталоги или копии.
+
 Пользовательский путь: установить проверенный `.deb` → создать профиль по примеру → validate →
 `run <profile> --dry-run` → `run <profile>` → `snapshots` → `verify` → `restore` в новый каталог.
 Перед удалением старых версий выполнить `prune <profile> --dry-run`, проверить список и затем `--apply`.

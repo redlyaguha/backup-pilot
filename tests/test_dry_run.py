@@ -1,13 +1,16 @@
 from contextlib import ExitStack, redirect_stdout
 import io
+import json
+import os
 from pathlib import Path
 import shutil
 import stat
 import subprocess
 import sys
+import unittest
 from unittest.mock import patch
 
-from backup_pilot.backup import execute_backup, plan_backup, preview_lines
+from backup_pilot.backup import BackupPlan, FileEntry, execute_backup, plan_backup, preview_lines
 from backup_pilot.cli import main
 from backup_pilot.profiles import load_profile
 from helpers import ProfileCase
@@ -40,8 +43,8 @@ class DryRunTest(ProfileCase):
                 with redirect_stdout(io.StringIO()) as output:
                     self.assertEqual(main(['--profiles-dir', str(self.profiles), 'run', 'demo', '--dry-run']), 0)
                 self.assertEqual(before, tree_state(self.root))
-                self.assertIn('copy b.txt', output.getvalue())
-                self.assertNotIn('copy a.tmp', output.getvalue())
+                self.assertIn('copy "b.txt"', output.getvalue())
+                self.assertNotIn('copy "a.tmp"', output.getvalue())
                 if not existing:
                     self.assertFalse(self.destination.exists())
 
@@ -63,7 +66,50 @@ class DryRunTest(ProfileCase):
         snapshot = execute_backup(plan)
         copied = sorted(path.relative_to(snapshot / 'data').as_posix()
                         for path in (snapshot / 'data').rglob('*') if path.is_file())
-        self.assertEqual(copied, sorted(line[5:] for line in lines if line.startswith('copy ')))
+        self.assertEqual(copied, sorted(json.loads(line[5:]) for line in lines if line.startswith('copy ')))
+
+    def test_preview_quotes_every_path_without_extra_lines(self):
+        special = Path('a\ncopy nonexistent.txt\r\t\x1b"\\имя')
+        plan = BackupPlan(self.profile, (special,), (FileEntry(special, ()),))
+        lines = preview_lines(plan)
+        self.assertEqual(len(lines), 4)
+        self.assertEqual(len('\n'.join(lines).splitlines()), 4)
+        destination = self.profile.destination / self.profile.name / '<new-snapshot>' / 'data'
+        self.assertEqual(json.loads(lines[0].split(': ', 1)[1]), destination.as_posix())
+        self.assertEqual(json.loads(lines[1][6:]), '.')
+        self.assertEqual(json.loads(lines[2][6:]), special.as_posix())
+        self.assertEqual(json.loads(lines[3][5:]), special.as_posix())
+        self.assertIn('\\ncopy nonexistent.txt\\r\\t\\u001b\\"', lines[3])
+        self.assertTrue(lines[3].isascii())
+
+    @unittest.skipIf(os.name == 'nt', 'control characters in filenames require Unix')
+    def test_real_special_names_match_preview_and_copy(self):
+        names = ('a\ncopy nonexistent.txt', 'cr\rname', 'tab\tname', 'esc\x1bname',
+                 'quote"name', 'back\\slash', 'имя')
+        directory = self.source / 'directory\nmkdir fake'
+        directory.mkdir()
+        for name in names:
+            (directory / name).write_bytes(name.encode('utf-8'))
+        self.destination = self.root / 'destination\n\r\t\x1b"\\имя'
+        self.write_profile()
+        profile = load_profile(self.config)
+        plan = plan_backup(profile)
+        before = tree_state(self.root)
+        with redirect_stdout(io.StringIO()) as output:
+            self.assertEqual(main(['--profiles-dir', str(self.profiles), 'run', 'demo', '--dry-run']), 0)
+        self.assertEqual(before, tree_state(self.root))
+        self.assertFalse(self.destination.exists())
+        lines = output.getvalue().splitlines()
+        self.assertEqual(lines, preview_lines(plan))
+        self.assertEqual(len(lines), 2 + len(plan.directories) + len(plan.files))
+        destination = profile.destination / profile.name / '<new-snapshot>' / 'data'
+        self.assertEqual(json.loads(lines[0].split(': ', 1)[1]), destination.as_posix())
+        snapshot = execute_backup(plan)
+        copied = sorted(path.relative_to(snapshot / 'data').as_posix()
+                        for path in (snapshot / 'data').rglob('*') if path.is_file())
+        self.assertEqual(copied, sorted(json.loads(line[5:]) for line in lines if line.startswith('copy ')))
+        for name in names:
+            self.assertEqual((snapshot / 'data' / directory.name / name).read_bytes(), name.encode('utf-8'))
 
     def test_fresh_launcher_does_not_create_bytecode(self):
         repo = Path(__file__).resolve().parents[1]
