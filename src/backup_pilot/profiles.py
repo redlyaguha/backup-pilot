@@ -64,6 +64,8 @@ def validate_paths(profile: Profile) -> None:
 def load_profile(path: Path) -> Profile:
     check_plain_path(path.absolute())
     try:
+        if not stat.S_ISREG(path.lstat().st_mode):
+            raise BackupPilotError(f'Профиль должен быть обычным файлом: {path}.', 2)
         with path.open('rb') as stream:
             data = tomllib.load(stream)
     except FileNotFoundError as exc:
