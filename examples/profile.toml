@@ -1,4 +1,5 @@
-# Проектный формат, будет реализован в BP-04. Только учебные пути.
+# Профиль прототипа. Скопировать как demo.toml в --profiles-dir. Только учебные пути.
+# keep_last и schedule пока не запускают retention или systemd.
 name = "demo"
 source = "/srv/backup-pilot-demo/source"
 destination = "/srv/backup-pilot-demo/backups"
