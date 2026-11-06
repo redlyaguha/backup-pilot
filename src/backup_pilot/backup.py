@@ -68,9 +68,13 @@ def plan_backup(profile: Profile) -> BackupPlan:
 
 def preview_lines(plan: BackupPlan) -> list[str]:
     """Render the same plan consumed by execute_backup; never allocate a snapshot."""
-    return [f'Назначение: {plan.profile.destination / plan.profile.name}/<new-snapshot>/data',
-            'mkdir .', *(f'mkdir {path.as_posix()}' for path in plan.directories),
-            *(f'copy {entry.relative.as_posix()}' for entry in plan.files)]
+    def quoted(path: Path) -> str:
+        return json.dumps(path.as_posix(), ensure_ascii=True)
+
+    destination = plan.profile.destination / plan.profile.name / '<new-snapshot>' / 'data'
+    return [f'Назначение: {quoted(destination)}',
+            f'mkdir {quoted(Path("."))}', *(f'mkdir {quoted(path)}' for path in plan.directories),
+            *(f'copy {quoted(entry.relative)}' for entry in plan.files)]
 
 
 def execute_backup(plan: BackupPlan) -> Path:
