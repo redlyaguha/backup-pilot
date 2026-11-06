@@ -18,6 +18,7 @@ class ProfilesTest(ProfileCase):
         return [
             ['profiles', 'validate', '--config', str(self.config)],
             ['--profiles-dir', str(self.profiles), 'profiles', 'list'],
+            ['--profiles-dir', str(self.profiles), 'run', 'demo'],
         ]
 
     def assert_non_regular_profile_rejected(self):
