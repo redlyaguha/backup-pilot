@@ -47,6 +47,11 @@ schedule = "daily"
             self.assertTrue((snapshot_data / "keep.txt").exists(), "Обычный файл не скопирован")
             self.assertFalse((snapshot_data / "skip.tmp").exists(), "Исключенный файл попал в бэкап")
 
+            # Сравниваем байты исходного файла и копии (защита от пустых копий)
+            original_bytes = (src / "keep.txt").read_bytes()
+            copied_bytes = (snapshot_data / "keep.txt").read_bytes()
+            self.assertEqual(copied_bytes, original_bytes, "Скопированный файл не совпадает побайтно с исходным")
+
     def test_missing_source_fails_red(self):
         """Unit-тест: отказ отсутствующего источника (падение основной функции делает тест красным)."""
         with tempfile.TemporaryDirectory() as tmp:

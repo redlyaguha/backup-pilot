@@ -1,21 +1,20 @@
 # BP-07: Smoke и начальные тесты сквозного сценария
 
-Дата: 06.11.2026
-Среда разработки: Windows, Python 3.11+ (локальный прогон тестов)
-Среда стенда Astra: Astra SE 1.8.1.6 x86-64 (проверка CLI и сценария)
+Дата: 07.11.2026
+Проверяющий: Ника (локально), Алексей (на Astra)
 
-## Результаты локального прогона unit/e2e тестов
+## 1. Локальный прогон (Windows, Python 3.11)
 
-Команда: python -m unittest tests.test_e2e -v
+Команда: PYTHONPATH=src python -m unittest tests.test_e2e -v
+Результат: PASS (2/2). Оба новых теста прошли успешно (включая сравнение байтов).
 
-Вывод:
-test_e2e_backup_with_exclusions ... ok
-test_missing_source_fails_red ... ok
-----------------------------------------------------------------------
-Ran 2 tests in 0.5s
-OK
+## 2. Прогон на Astra (Smoke)
 
-## Проверка на Astra (Smoke)
-Сценарий: backup выполнен, исключения работают, файлы сверены по SHA-256, отсутствующий source отдает exit 2.
-Статус: PASS (подтверждено скриптом verify-prototype.py из BP-06 и новым E2E тестом)
-NOT RUN: пока не выполнено на интеграционном коммите dev (будет сделано после merge BP-07)
+Среда: Установленная Astra SE 1.8.1.6 x86_64, Python 3.11.2, непривилегированный пользователь bpuser, /dev/vda2 ext4 (не Live).
+Проверенный commit: e326681 (до добавления байтового сравнения).
+Команда: PYTHONPATH=src PYTHONDONTWRITEBYTECODE=1 python3 -S -B -m unittest discover -s tests -v
+Фактический вывод (обезличенный): 
+18 PASS / 0 SKIP, включая оба новых теста (test_e2e_backup_with_exclusions, test_missing_source_fails_red).
+
+Примечание: Это не продуктовый verify BP-09 (сравнение SHA-256 манифеста) и не полная приёмка A1–A5. 
+Задача BP-07 покрывает начальный smoke-сценарий.
