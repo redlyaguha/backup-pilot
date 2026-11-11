@@ -117,3 +117,44 @@ d616a0b06cf67d11bc4405b556b6269ec0ced0eb314693cb21c5262cbf315639  /opt/backup-pi
 1936cf93ac334973ae01551cd25fb01eca60cee6e609548be6f73e6dd990f575  /opt/backup-pilot-stand/verify-prototype.py
 
 BP06_INSTALLED_SCENARIO_AND_TESTS_PASS
+
+## Предварительная проверка после ревью 11.11.2026
+Astra SE 1.8.1.6 x86-64, непривилегированный bpuser. Исходники PR #37 доступны bpuser на запись.
+Проверены только help/version и отсутствие bytecode. Сквозной backup на c524157 и dev имеет статус NOT RUN.
+SHA-256 в конце относится к обновлённому preflight.
+
+UTC 2026-11-11 07:22:57
+# python3 -I -S -B scripts/stand/check-runtime.py --repo <prototype> --probe-cli
+BP-06 runtime preflight (not product acceptance)
+Python: 3.11.2
+Architecture: x86_64
+Live boot: no
+Astra: 1.8.1.6
+Python >= 3.11: OK
+tomllib: OK
+Source commit: c52415709f7954645da14a75cf07d1d24a1db259
+External imports (static scan): none
+Dynamic imports and system commands require manual review.
+CLI probe: --help
+usage: backup-pilot [-h] [--version] [--profiles-dir PROFILES_DIR]
+                    {profiles,run,snapshots} ...
+
+Менеджер локальных резервных копий
+
+positional arguments:
+  {profiles,run,snapshots}
+    profiles            список и проверка профилей
+    run                 создать отдельную копию
+    snapshots           перечислить завершённые копии
+
+options:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+  --profiles-dir PROFILES_DIR
+                        каталог именных TOML-профилей
+CLI probe: --version
+backup-pilot 0.1.0
+Backup scenario: NOT RUN (follow docs/astra-prototype.md)
+Preflight OK; BP-06 still requires actual backup evidence.
+PASS writable checkout stayed clean and no bytecode appeared
+295e806b1e7f0565ecb5e23652959a5415821a9c20be3fed7fb76715cc8e55e2  check-runtime.py

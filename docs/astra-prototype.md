@@ -1,11 +1,15 @@
 # BP-06 — воспроизводимый запуск прототипа на Astra
 
-Статус на 05.11.2026: прототип BP-04/BP-05 появился в PR #37, commit
-`43c7300123432be5ec37cbd2434a907e49cc56c0`. В dev d89f8d3 он ещё не объединён.
-Сквозной запуск на установленной Astra **PASS**, 05.11.2026, под bpuser.
-Результат: `docs/evidence/bp-06-run.txt`. BP-02 проверена, сохранены clean-install и stand-ready
-(PR #33). Ревью и слияние зависимостей выполняются отдельно.
-Предварительная проверка не заменяет запуск приложения и не закрывает #6.
+Сквозной запуск на установленной Astra прошёл 05.11.2026 под bpuser на
+`43c7300123432be5ec37cbd2434a907e49cc56c0` из PR #37.
+К этому коммиту относится `docs/evidence/bp-06-run.txt`.
+
+На 11.11.2026 `dev` находится на `c4a790b` после BP-01. Текущие коммиты
+PR #36 и #37 — `01f7d26` и `c524157`. Сквозной прогон на этих версиях
+и на интеграционном коммите `dev` имеет статус **NOT RUN**.
+На `c524157` отдельно проверены help/version через обновлённый preflight.
+В checkout, доступном bpuser на запись, bytecode не появился. Вывод добавлен в evidence.
+Стенд и клоны clean-install/stand-ready описаны в PR #33.
 
 ## Условия
 
@@ -23,30 +27,31 @@ hashlib, json, unittest), systemd и системные Debian-инструме�
 stdlib/tomllib, systemd 252. Полный отчёт стенда — в PR #33 (`bp-02-stand.txt`).
 В BP-05 статически обнаружены только импорты stdlib; динамических импортов и вызовов
 внешних команд в шести Python-файлах прототипа не найдено. Фактический запуск проверяется
-в режиме `-I -S`, без site-packages и переменной PYTHONPATH.
+в режиме `-I -S -B`, без site-packages и переменной PYTHONPATH.
 
 ## Предварительная проверка
 
 Под bpuser, где `/opt/backup-pilot-prototype` — отдельный checkout BP-05:
 
 ```sh
-python3 -I -S scripts/stand/check-runtime.py --repo /opt/backup-pilot-prototype --probe-cli
+python3 -I -S -B scripts/stand/check-runtime.py --repo /opt/backup-pilot-prototype --probe-cli
 ```
 
 Коды: 0 — пройдена только предварительная проверка; 1 — ошибка версии,
 импорта/синтаксиса или CLI; 2 — отсутствует прототип/точка входа либо запуск вне
 целевой Astra. Отсутствие прототипа никогда не выдаётся за PASS.
 
-Скрипт не изменяет учебные каталоги. Статический анализ импортов приблизителен:
+Ключ `-B` предотвращает запись bytecode в исходники, доступные пользователю на запись.
+Статический анализ импортов приблизителен:
 проверить динамические импорты и вызовы внешних команд вручную. --probe-cli
-запускает только --help и --version с -I -S, исключая site-packages и PYTHONPATH.
+запускает только --help и --version с -I -S -B, исключая site-packages и PYTHONPATH.
 В текущем BP-04 реализована точка входа `python -m backup_pilot`. Для запуска из src
-проверка явно добавляет каталог src через runpy, сохраняя изоляцию `-I -S`.
+проверка явно добавляет каталог src через runpy, сохраняя изоляцию `-I -S -B`.
 
 ## Сквозной сценарий BP-05
 
 ```sh
-python3 -I -S scripts/stand/verify-prototype.py --repo /opt/backup-pilot-prototype
+python3 -I -S -B scripts/stand/verify-prototype.py --repo /opt/backup-pilot-prototype
 ```
 
 Скрипт требует Astra 1.8 x86-64, непривилегированный запуск, неизменённый checkout и

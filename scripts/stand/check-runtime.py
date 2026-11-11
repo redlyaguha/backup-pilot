@@ -63,12 +63,12 @@ def check(repo: Path, probe: bool = False) -> int:
         if hasattr(__import__('os'), 'geteuid') and __import__('os').geteuid() == 0:
             print('FAIL: run CLI as bpuser, not root.')
             return 1
-        # -I -S excludes user site, site-packages and PYTHONPATH; only explicit src and stdlib remain.
+        # -I -S isolates imports. The child needs its own -B to avoid writing bytecode.
         launcher = 'import sys,runpy;sys.path.insert(0,sys.argv.pop(1));runpy.run_module("backup_pilot",run_name="__main__")'
         for flag in ('--help', '--version'):
             print('CLI probe:', flag, flush=True)
             try:
-                result = subprocess.run([sys.executable, '-I', '-S', '-c', launcher,
+                result = subprocess.run([sys.executable, '-I', '-S', '-B', '-c', launcher,
                                          str(repo / 'src'), flag], cwd=repo, timeout=30)
             except (OSError, subprocess.TimeoutExpired) as exc:
                 print('FAIL:', type(exc).__name__)
