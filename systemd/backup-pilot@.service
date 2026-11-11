@@ -1,0 +1,10 @@
+[Unit]
+Description=Backup Pilot profile %i
+
+[Service]
+Type=oneshot
+User=backup-pilot
+ExecStart=/usr/bin/backup-pilot run %i
+UMask=0077
+NoNewPrivileges=yes
+CapabilityBoundingSet=
