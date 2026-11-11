@@ -30,6 +30,23 @@ os_field() {
     sed -n "s/^$1=//p" /etc/os-release | tr -d '"'
 }
 
+show_metadata() { # путь тип владелец права
+    if [ -L "$1" ]; then
+        echo "FAIL $1 (symlink)"
+    elif [ ! -e "$1" ]; then
+        echo "NOT FOUND $1"
+    elif { [ "$2" = dir ] && [ ! -d "$1" ]; } || { [ "$2" = file ] && [ ! -f "$1" ]; }; then
+        echo "FAIL $1 (неожиданный тип объекта)"
+    else
+        actual=$(stat -c '%U:%G %a' -- "$1")
+        if [ "$actual" = "$3:$3 $4" ]; then
+            echo "OK $actual $1"
+        else
+            echo "FAIL $actual $1 (ожидается $3:$3 $4)"
+        fi
+    fi
+}
+
 report() {
     echo "# Backup Pilot — стенд BP-02"
     echo "Собрано (UTC): $(date -u '+%Y-%m-%d %H:%M')"
@@ -71,28 +88,36 @@ report() {
     echo "## Учебный пользователь"
     if id "$BP_USER" >/dev/null 2>&1; then
         echo "$BP_USER: uid=$(id -u "$BP_USER"), группы: $(id -nG "$BP_USER")"
-        case " $(id -nG "$BP_USER") " in
-            *" sudo "*|*" astra-admin "*|*" root "*)
-                echo "Привилегии: FAIL (входит в административную группу)" ;;
-            *)
-                echo "Привилегии: OK (нет sudo/astra-admin/root)" ;;
-        esac
+        if [ "$(id -u "$BP_USER")" -ne 0 ] && [ "$(id -nG "$BP_USER")" = "$BP_USER" ]; then
+            echo "Привилегии: OK (ненулевой uid, только учебная группа)"
+        else
+            echo "Привилегии: FAIL (ожидается непривилегированный uid и только учебная группа)"
+        fi
     else
         echo "$BP_USER: NOT FOUND (запустите prepare-stand.sh --apply)"
     fi
     echo
-    echo "## Учебные каталоги"
-    for dir in "$BP_ROOT" "$BP_ROOT/source" "$BP_ROOT/backups"; do
-        if [ -d "$dir" ]; then
-            echo "$(stat -c '%A %U:%G' "$dir") $dir"
-        else
-            echo "NOT FOUND $dir"
-        fi
+    echo "## Учебные каталоги и права"
+    show_metadata "$BP_ROOT" dir root 755
+    for suffix in source backups source/docs source/cache source/bin; do
+        show_metadata "$BP_ROOT/$suffix" dir "$BP_USER" 750
+    done
+    echo
+    echo "## Учебные файлы и права"
+    for suffix in docs/readme.txt notes.tmp cache/item.txt bin/sample.bin; do
+        show_metadata "$BP_ROOT/source/$suffix" file "$BP_USER" 640
     done
     if [ -d "$BP_ROOT/source" ] && [ -r "$BP_ROOT/source" ]; then
         echo
         echo "## Тестовые файлы source (SHA-256)"
-        (cd "$BP_ROOT/source" && find . -type f | LC_ALL=C sort | xargs -r sha256sum)
+        hash_source='cd "$1" && find . -type f -print0 | LC_ALL=C sort -z | xargs -0r sha256sum'
+        if [ "$(id -u)" -eq 0 ]; then
+            runuser -u "$BP_USER" -- /bin/sh -c "$hash_source" _ "$BP_ROOT/source" ||
+                echo "FAIL (не удалось собрать SHA-256 от имени $BP_USER)"
+        else
+            /bin/sh -c "$hash_source" _ "$BP_ROOT/source" ||
+                echo "FAIL (не удалось собрать SHA-256)"
+        fi
     fi
 }
 

@@ -48,6 +48,7 @@ command -v python3 >/dev/null 2>&1 || fail "не найден python3, нуже�
 python3 - "$BP_ROOT" "$BP_USER" <<'CHECK_PATHS' || fail "небезопасные параметры стенда" 2
 from pathlib import Path
 import re
+import stat
 import sys
 root = Path(sys.argv[1])
 if ('..' in root.parts or not root.is_absolute()
@@ -55,6 +56,14 @@ if ('..' in root.parts or not root.is_absolute()
     raise SystemExit('BP_ROOT: нужен подкаталог /srv без ..')
 if not re.fullmatch(r'[a-z_][a-z0-9_-]{0,30}', sys.argv[2]) or sys.argv[2] == 'root':
     raise SystemExit('BP_USER: нужно имя отдельного учебного пользователя')
+# Только root может менять компоненты пути до корня учебного стенда.
+for part in (*reversed(root.parents), root):
+    try:
+        info = part.lstat()
+    except FileNotFoundError:
+        continue
+    if not stat.S_ISDIR(info.st_mode) or info.st_uid != 0 or info.st_mode & 0o022:
+        raise SystemExit('Нужен каталог root без записи для группы и остальных: ' + str(part))
 for suffix in ('', 'source', 'backups', 'source/docs', 'source/cache', 'source/bin',
                'source/docs/readme.txt', 'source/notes.tmp', 'source/cache/item.txt',
                'source/bin/sample.bin'):
@@ -71,34 +80,57 @@ else
     [ "$APPLY" -eq 0 ] || useradd --create-home --user-group --shell /bin/bash "$BP_USER"
 fi
 
-make_dir() { # путь владелец права
-    if [ -d "$1" ]; then
+# Существующая учётная запись тоже должна быть отдельной и непривилегированной.
+if id "$BP_USER" >/dev/null 2>&1; then
+    [ "$(id -u "$BP_USER")" -ne 0 ] && [ "$(id -nG "$BP_USER")" = "$BP_USER" ] ||
+        fail "пользователь $BP_USER должен иметь ненулевой uid и только группу $BP_USER" 2
+fi
+
+check_metadata() { # путь владелец права
+    actual=$(stat -c '%U:%G %a' -- "$1") || fail "не удалось прочитать права $1" 2
+    [ "$actual" = "$2:$2 $3" ] ||
+        fail "$1: получено $actual, ожидается $2:$2 $3" 2
+}
+
+make_dir() { # путь владелец права [user]
+    [ ! -L "$1" ] || fail "symlink вместо каталога: $1" 2
+    if [ -e "$1" ]; then
+        [ -d "$1" ] || fail "ожидается каталог: $1" 2
+        check_metadata "$1" "$2" "$3"
         echo "каталог $1 уже существует, не изменяется"
         return
     fi
-    step "install -d -o $2 -g $2 -m $3 $1"
-    [ "$APPLY" -eq 0 ] || install -d -o "$2" -g "$2" -m "$3" "$1"
+    if [ "${4:-}" = user ]; then
+        step "runuser -u $BP_USER -- mkdir -m $3 $1"
+        [ "$APPLY" -eq 0 ] || runuser -u "$BP_USER" -- mkdir -m "$3" -- "$1"
+    else
+        step "install -d -o $2 -g $2 -m $3 $1"
+        [ "$APPLY" -eq 0 ] || install -d -o "$2" -g "$2" -m "$3" -- "$1"
+    fi
+    [ "$APPLY" -eq 0 ] || check_metadata "$1" "$2" "$3"
 }
 
-make_dir "$BP_ROOT" root 0755
-make_dir "$SOURCE" "$BP_USER" 0750
-make_dir "$BACKUPS" "$BP_USER" 0750
-make_dir "$SOURCE/docs" "$BP_USER" 0750
-make_dir "$SOURCE/cache" "$BP_USER" 0750
-make_dir "$SOURCE/bin" "$BP_USER" 0750
+make_dir "$BP_ROOT" root 755
+make_dir "$SOURCE" "$BP_USER" 750
+make_dir "$BACKUPS" "$BP_USER" 750
+make_dir "$SOURCE/docs" "$BP_USER" 750 user
+make_dir "$SOURCE/cache" "$BP_USER" 750 user
+make_dir "$SOURCE/bin" "$BP_USER" 750 user
 
-# Тестовые данные: обычный файл и исключаемые *.tmp, cache/** для A1, бинарный файл для A4.
+# В дереве source все записи выполняет учебный пользователь.
 make_file() { # путь описание; содержимое читается из stdin
+    [ ! -L "$1" ] || fail "symlink вместо файла: $1" 2
     if [ -e "$1" ]; then
+        [ -f "$1" ] || fail "ожидается обычный файл: $1" 2
+        check_metadata "$1" "$BP_USER" 640
         echo "файл $1 уже существует, не изменяется"
         cat >/dev/null
         return
     fi
-    step "создать $1 ($2)"
+    step "создать $1 от имени $BP_USER ($2)"
     if [ "$APPLY" -eq 1 ]; then
-        cat >"$1"
-        chown "$BP_USER:$BP_USER" "$1"
-        chmod 0640 "$1"
+        runuser -u "$BP_USER" -- /bin/sh -c 'umask 027; set -C; cat > "$1"' _ "$1"
+        check_metadata "$1" "$BP_USER" 640
     else
         cat >/dev/null
     fi
