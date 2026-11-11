@@ -1,0 +1,128 @@
+# Backup Pilot — стенд BP-02
+Собрано (UTC): 2026-11-05 09:01
+
+## Система
+Astra build_version: 1.8.1.6
+OS: Astra Linux (VERSION_ID=1.8_x86-64)
+Ядро: 6.1.90-1-generic, архитектура: x86_64
+Виртуализация: qemu
+Загрузка: UEFI
+Корневая ФС: /dev/vda2 ext4
+Загрузка с диска: проверить SOURCE выше, ожидается /dev/vda2 ext4
+Режим защищённости: base(orel)
+
+## Инструменты
+Python: Python 3.11.2
+tomllib: OK
+systemd: systemd 252 (252.17-1~deb12u1astra.se1+ci13)
+dpkg: Debian 'dpkg' package management program version 1.21.22 (amd64).
+dpkg-deb: Debian 'dpkg-deb' package archive backend version 1.21.22 (amd64).
+apt: apt 2.6.1 (amd64)
+dpkg audit: OK (нет незавершённых пакетов)
+
+## Учебный пользователь
+bpuser: uid=1001, группы: bpuser
+Привилегии: OK (нет sudo/astra-admin/root)
+
+## Учебные каталоги
+drwxr-xr-x root:root /srv/backup-pilot-demo
+drwxr-x--- bpuser:bpuser /srv/backup-pilot-demo/source
+drwxr-x--- bpuser:bpuser /srv/backup-pilot-demo/backups
+
+## Тестовые файлы source (SHA-256)
+7daca2095d0438260fa849183dfc67faa459fdf4936e1bc91eec6b281b27e4c2  ./bin/sample.bin
+e1ef2d2eb4c3868c58f0cccf12d65610fcbf40ba88a1853f1a7fc6d8e00e724c  ./cache/item.txt
+d1a3d8976650501641dd9b4ae1851374bf749b55859612f9b365bf450faa5086  ./docs/readme.txt
+183a4b8700b3da6e332fac8c3276da224c088160b24fb4be341dfa69a76ab68d  ./notes.tmp
+
+## SHA-256 применённых скриптов
+Раздел добавлен отдельно от вывода collect-stand-info.sh.
+Команда: sha256sum /opt/backup-pilot-stand/collect-stand-info.sh /opt/backup-pilot-stand/prepare-stand.sh
+ef16747ca952ba046fce1767ef2f1b347b44bb5e37a9a832ba647cc877fcb5e7  /opt/backup-pilot-stand/collect-stand-info.sh
+d18912227e5d525edd09595975781e85107ee1260f934fbe62d7a403a65e7b2c  /opt/backup-pilot-stand/prepare-stand.sh
+
+## Повторная проверка прав и сборщика после ревью 11.11.2026
+На установленной Astra SE 1.8.1.6 проверены временный набор учебных данных и текущий стенд.
+Отрицательные проверки владельца и режима выполнены на временном наборе.
+SHA-256 в конце относятся к обновлённым скриптам.
+
+UTC 2026-11-11 07:22:13
+Astra: 1.8.1.6
+Root: /dev/vda2 ext4
+# sh scripts/stand/prepare-stand.sh
+пользователь bpuser уже существует, не изменяется
+[план] install -d -o root -g root -m 755 <test-dir>/stand
+[план] install -d -o bpuser -g bpuser -m 750 <test-dir>/stand/source
+[план] install -d -o bpuser -g bpuser -m 750 <test-dir>/stand/backups
+[план] runuser -u bpuser -- mkdir -m 750 <test-dir>/stand/source/docs
+[план] runuser -u bpuser -- mkdir -m 750 <test-dir>/stand/source/cache
+[план] runuser -u bpuser -- mkdir -m 750 <test-dir>/stand/source/bin
+[план] создать <test-dir>/stand/source/docs/readme.txt от имени bpuser (обычный файл)
+[план] создать <test-dir>/stand/source/notes.tmp от имени bpuser (исключается *.tmp)
+[план] создать <test-dir>/stand/source/cache/item.txt от имени bpuser (исключается cache/**)
+[план] создать <test-dir>/stand/source/bin/sample.bin от имени bpuser (бинарный файл 64 КиБ)
+изменения не выполнялись; для подготовки: sudo /tmp/bp-polish-verify/prepare-stand.sh --apply
+PASS plan left the fixture absent
+# sudo sh scripts/stand/prepare-stand.sh --apply
+пользователь bpuser уже существует, не изменяется
++ install -d -o root -g root -m 755 <test-dir>/stand
++ install -d -o bpuser -g bpuser -m 750 <test-dir>/stand/source
++ install -d -o bpuser -g bpuser -m 750 <test-dir>/stand/backups
++ runuser -u bpuser -- mkdir -m 750 <test-dir>/stand/source/docs
++ runuser -u bpuser -- mkdir -m 750 <test-dir>/stand/source/cache
++ runuser -u bpuser -- mkdir -m 750 <test-dir>/stand/source/bin
++ создать <test-dir>/stand/source/docs/readme.txt от имени bpuser (обычный файл)
++ создать <test-dir>/stand/source/notes.tmp от имени bpuser (исключается *.tmp)
++ создать <test-dir>/stand/source/cache/item.txt от имени bpuser (исключается cache/**)
++ создать <test-dir>/stand/source/bin/sample.bin от имени bpuser (бинарный файл 64 КиБ)
+стенд подготовлен: <test-dir>/stand, пользователь bpuser
+проверка: sh scripts/stand/collect-stand-info.sh
+пользователь bpuser уже существует, не изменяется
+каталог <test-dir>/stand уже существует, не изменяется
+каталог <test-dir>/stand/source уже существует, не изменяется
+каталог <test-dir>/stand/backups уже существует, не изменяется
+каталог <test-dir>/stand/source/docs уже существует, не изменяется
+каталог <test-dir>/stand/source/cache уже существует, не изменяется
+каталог <test-dir>/stand/source/bin уже существует, не изменяется
+файл <test-dir>/stand/source/docs/readme.txt уже существует, не изменяется
+файл <test-dir>/stand/source/notes.tmp уже существует, не изменяется
+файл <test-dir>/stand/source/cache/item.txt уже существует, не изменяется
+файл <test-dir>/stand/source/bin/sample.bin уже существует, не изменяется
+стенд подготовлен: <test-dir>/stand, пользователь bpuser
+проверка: sh scripts/stand/collect-stand-info.sh
+PASS repeat apply preserved inodes, ownership, modes, mtime and bytes
+пользователь bpuser уже существует, не изменяется
+каталог <test-dir>/stand уже существует, не изменяется
+каталог <test-dir>/stand/source уже существует, не изменяется
+каталог <test-dir>/stand/backups уже существует, не изменяется
+каталог <test-dir>/stand/source/docs уже существует, не изменяется
+каталог <test-dir>/stand/source/cache уже существует, не изменяется
+каталог <test-dir>/stand/source/bin уже существует, не изменяется
+ошибка: <test-dir>/stand/source/docs/readme.txt: получено bpuser:bpuser 600, ожидается bpuser:bpuser 640
+FAIL bpuser:bpuser 600 <test-dir>/stand/source/docs/readme.txt (ожидается bpuser:bpuser 640)
+PASS wrong file mode rejected and left intact
+пользователь bpuser уже существует, не изменяется
+каталог <test-dir>/stand уже существует, не изменяется
+каталог <test-dir>/stand/source уже существует, не изменяется
+ошибка: <test-dir>/stand/backups: получено root:root 750, ожидается bpuser:bpuser 750
+PASS wrong directory owner rejected and left intact
+Нужен каталог root без записи для группы и остальных: <test-dir>/unsafe-parent
+ошибка: небезопасные параметры стенда
+PASS root setup rejects a writable ancestor before writing
+# sudo sh scripts/stand/collect-stand-info.sh
+OK root:root 755 <test-dir>/stand
+OK bpuser:bpuser 750 <test-dir>/stand/source
+OK bpuser:bpuser 750 <test-dir>/stand/backups
+OK bpuser:bpuser 750 <test-dir>/stand/source/docs
+OK bpuser:bpuser 750 <test-dir>/stand/source/cache
+OK bpuser:bpuser 750 <test-dir>/stand/source/bin
+OK bpuser:bpuser 640 <test-dir>/stand/source/docs/readme.txt
+OK bpuser:bpuser 640 <test-dir>/stand/source/notes.tmp
+OK bpuser:bpuser 640 <test-dir>/stand/source/cache/item.txt
+OK bpuser:bpuser 640 <test-dir>/stand/source/bin/sample.bin
+7daca2095d0438260fa849183dfc67faa459fdf4936e1bc91eec6b281b27e4c2  ./bin/sample.bin
+ab0f91fc31222d597ebc3fb7faf91b350074d46877c0bf0dfabec821a20b0cdf  ./space name.txt
+PASS NUL-delimited hashing includes the filename with spaces
+PASS existing BP-02 stand passes owner/mode/type checks
+35e49008cd4f7ba72b341476fca10e369c34f3db6cba5aa64fef889a1f7d5a43  prepare-stand.sh
+98c6c9937f108b1dcc0a8532a230ea40b5e5d4603718421da798a2dae923a7cc  collect-stand-info.sh
