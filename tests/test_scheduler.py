@@ -69,7 +69,7 @@ class ScheduleTransactionTest(unittest.TestCase):
                 output = (f'LoadState=loaded\nActiveState={"active" if self.active else "inactive"}\n'
                           f'UnitFileState={"enabled" if self.enabled else "disabled"}\n')
             return subprocess.CompletedProcess(args, 0, stdout=output)
-        operation = args[1] if args[0] == '--no-reload' else args[0]
+        operation = args[0]
         if operation == 'stop':
             self.active = False
         elif operation == 'start':

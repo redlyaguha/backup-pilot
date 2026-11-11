@@ -80,9 +80,8 @@ class Scheduler:
             capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=30,
         )
         if result.returncode:
-            operation = args[0] if args[0] != '--no-reload' else args[1]
             raise BackupPilotError(
-                f'systemctl {operation} завершился с кодом {result.returncode}. '
+                f'systemctl {args[0]} завершился с кодом {result.returncode}. '
                 'Проверьте состояние systemd, установку unit и права администратора.', 4,
             )
         return result
@@ -150,9 +149,9 @@ class Scheduler:
                     changed = True
                     content = f'[Timer]\nOnCalendar=\nOnCalendar={calendar}\n'.encode('ascii')
                     write_drop_in(self.drop_in, content, previous.mode)
-                    self._systemctl('daemon-reload')
+                # enable/disable reload the manager and refresh its unit-file state.
                 operation = 'enable' if calendar is not None else 'disable'
-                self._systemctl('--no-reload', operation, '--', self.timer)
+                self._systemctl(operation, '--', self.timer)
                 if calendar is not None:
                     self._systemctl('start', '--', self.timer)
             except (BackupPilotError, OSError, subprocess.SubprocessError) as exc:
@@ -178,8 +177,7 @@ class Scheduler:
                     directory.rmdir()
             else:
                 write_drop_in(self.drop_in, previous.content, previous.mode)
-            self._systemctl('daemon-reload')
         operation = 'enable' if enabled == 'enabled' else 'disable'
-        self._systemctl('--no-reload', operation, '--', self.timer)
+        self._systemctl(operation, '--', self.timer)
         if active == 'active':
             self._systemctl('start', '--', self.timer)
