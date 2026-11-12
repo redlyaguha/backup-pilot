@@ -37,6 +37,7 @@ def check_plain_path(path: Path) -> None:
 
 
 def validate_paths(profile: Profile) -> None:
+    check_name(profile.name)
     for path in (profile.source, profile.destination):
         if not path.is_absolute() or '..' in path.parts:
             raise BackupPilotError(f'Нужен абсолютный путь без ..: {path}. Исправьте профиль.')
