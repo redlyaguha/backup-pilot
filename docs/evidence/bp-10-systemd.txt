@@ -1,0 +1,77 @@
+BP-10 — повторная проверка на установленной Astra SE 1.8.1.6
+Служба использовала шаблоны из проверенного коммита и стендовый User=bpuser.
+Тестовый /usr/bin/backup-pilot запускал исходный CLI через Python 3.11.2.
+Расписание содержало один момент UTC, выбранный на 95 секунд вперёд.
+При проверке отката имитирован один сбой systemctl start. Остальные
+операции выполнены реальным systemd. Журнальный путь тестовых данных обезличен.
+
+# BP-10 smoke on installed Astra
+Source commit: 6ce7c45c12d3f0d7de9c7a0877d7d0e20fe8f3e4
+UTC 2026-11-11 07:09:57
+1.8.1.6
+x86_64
+/dev/vda2 ext4
+Python 3.11.2
+systemd 252 (252.17-1~deb12u1astra.se1+ci13)
+uid=1001(bpuser) gid=1002(bpuser) groups=1002(bpuser)
+
+# PYTHONPATH=src PYTHONDONTWRITEBYTECODE=1 python3 -B -m unittest discover -s tests
+....................................
+----------------------------------------------------------------------
+Ran 36 tests in 18.336s
+
+OK
+
+# State after installing templates
+ActiveState=inactive
+UnitFileState=disabled
+ActiveState=inactive
+UnitFileState=disabled
+
+# backup-pilot schedule bp10-smoke enable (invalid calendar)
+Ошибка: Неверное расписание OnCalendar. Проверьте поле schedule в профиле.
+PASS invalid calendar: exit 2, no changes
+
+# backup-pilot schedule bp10-smoke enable --dry-run (bpuser)
+Установить OnCalendar="2026-11-11 07:12:06 UTC" в /etc/systemd/system/backup-pilot@bp10-smoke.timer.d/50-backup-pilot-schedule.conf.
+Перечитать конфигурацию systemd, включить и запустить backup-pilot@bp10-smoke.timer.
+PASS enable dry-run: unit state and filesystem unchanged
+
+# backup-pilot schedule bp10-smoke enable (bpuser)
+Ошибка: Для изменения системного таймера нужны права администратора. Используйте sudo.
+PASS permission denied: exit 3, no changes
+
+# backup-pilot schedule bp10-smoke enable (administrator)
+backup-pilot@bp10-smoke.timer: расписание включено.
+backup-pilot@bp10-smoke.timer
+LoadState="loaded"
+ActiveState="active"
+UnitFileState="enabled"
+TimersCalendar="{ OnCalendar=2026-11-11 07:12:06 UTC ; next_elapse=Wed 2026-11-11 10:12:06 MSK }"
+NextElapseUSecRealtime="Wed 2026-11-11 10:12:06 MSK"
+
+# Fault injection: fail the first start after updating the active timer
+Injected start failure Прежнее расписание восстановлено.
+PASS rollback: calendar bytes, active and enabled restored
+
+# backup-pilot schedule bp10-smoke disable --dry-run (bpuser)
+Остановить и отключить backup-pilot@bp10-smoke.timer. Сохранить файл расписания.
+PASS disable dry-run: calendar, active and enabled unchanged
+
+# Await real calendar event at 2026-11-11 07:12:06 UTC
+# journalctl --no-pager -u backup-pilot@bp10-smoke.service --since "2026-11-11 07:12:06 UTC" _UID=1001 -o cat
+Копирование завершено: <test-dir>/data/backups/bp10-smoke/20261111T071207126992Z-b5558a5d
+SHA-256 ещё не проверен: модуль integrity — BP-09.
+PASS real timer: bytes match, exclusion applied, service UID=1001, journald confirmed
+
+# backup-pilot schedule bp10-smoke disable (administrator)
+backup-pilot@bp10-smoke.timer: расписание отключено.
+backup-pilot@bp10-smoke.timer
+LoadState="loaded"
+ActiveState="inactive"
+UnitFileState="disabled"
+TimersCalendar="{ OnCalendar=2026-11-11 07:12:06 UTC ; next_elapse=(null) }"
+NextElapseUSecRealtime=""
+UnitFileState="disabled"
+PASS disable after profile removal: inactive, disabled, calendar preserved
+PASS cleanup: removed smoke timer, units, profile and data

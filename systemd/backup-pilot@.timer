@@ -1,0 +1,10 @@
+[Unit]
+Description=Backup Pilot schedule for profile %i
+
+[Timer]
+Unit=backup-pilot@%i.service
+Persistent=no
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

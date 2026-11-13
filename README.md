@@ -3,9 +3,42 @@
 Учебный менеджер резервного копирования для **Astra Linux Special Edition 1.8 x86-64**.
 Кейс 04, проектный практикум МТУСИ. Имя будущего Debian-пакета и команды: `backup-pilot`.
 
-**Текущий статус (28.10.2026):** подготовлены репозиторий, архитектурная схема, план,
-задачи и правила работы. Приложение, его тесты и `.deb` ещё предстоит реализовать.
-Зелёная проверка структуры репозитория не означает готовность продукта.
+**Состояние прототипа в этой ветке:** работают TOML-профили, копирование
+обычных файлов с исключениями, список завершённых snapshot, dry-run и общие ошибки.
+BP-10 добавляет управление таймерами systemd. Для установки unit и проверки журнала
+см. [руководство администратора](docs/admin-guide.md#расписание-systemd-bp-10).
+SHA-256/verify, retention, restore и `.deb` относятся к следующим задачам.
+
+## Запуск прототипа из исходников
+
+Нужен Python 3.11+, сторонние pip-пакеты не требуются. На учебном стенде Алексей
+готовит `/srv/backup-pilot-demo/source` с тестовыми файлами и права на назначение.
+Источник должен существовать, назначение может отсутствовать. Обычные команды запускаются без sudo.
+
+```sh
+python3 -B backup-pilot --help
+python3 -B backup-pilot --version
+mkdir -p /tmp/backup-pilot-profiles
+cp examples/profile.toml /tmp/backup-pilot-profiles/demo.toml
+# При необходимости исправить source/destination в скопированном TOML.
+python3 -B backup-pilot profiles validate --config /tmp/backup-pilot-profiles/demo.toml
+python3 -B backup-pilot --profiles-dir /tmp/backup-pilot-profiles profiles list
+python3 -B backup-pilot --profiles-dir /tmp/backup-pilot-profiles run demo --dry-run
+python3 -B backup-pilot --profiles-dir /tmp/backup-pilot-profiles run demo
+python3 -B backup-pilot --profiles-dir /tmp/backup-pilot-profiles snapshots demo
+PYTHONPATH=src python3 -B -m backup_pilot --version
+```
+
+На Windows запускатель вызывается так же через `python`, а source/destination в TOML
+должны быть абсолютными Windows-путями (удобнее с `/`). Это локальная проверка, не целевая ОС продукта.
+`--profiles-dir` ставится перед подкомандой. Имя профиля demo означает `demo.toml` с `name = "demo"`.
+`keep_last` проверяется при чтении профиля. `schedule` проверяется как OnCalendar при включении таймера.
+SHA-256 ещё не проверяется; `snapshot.json` сообщает только о завершении копирования.
+При сбое `.partial-*` сохраняется для диагностики и не появляется в `snapshots`.
+
+Пока источник должен существовать даже для `snapshots`: загрузка профиля проверяет его пути.
+Гонки конкурентной подмены путей и блокировки относятся к будущей BP-16; прототип использовать
+с учебными данными без одновременного изменения источника.
 
 ## Что должен уметь продукт
 
@@ -78,10 +111,13 @@ GitHub используется для разработки и задач по �
 исходники и работающий `lint → test → package` в **GitFlic**: это отдельная обязательная
 задача BP-23, а не выполненная часть проекта. Финальные ветки и теги должны совпадать на обеих площадках.
 
-Сейчас GitHub Actions проверяет структуру репозитория и направление PR.
+В этой ветке GitHub Actions проверяет структуру, направление PR и unit-тесты прототипа на Linux.
 `gitflic-ci.yaml` — исходный шаблон; продуктовые `scripts/lint.sh`, `test.sh`, `package.sh`
 пока явно завершаются ошибкой «не реализовано». Продуктовый CI включается после появления
 работающих локальных команд; пустые тесты не должны считаться успешной приёмкой.
+
+Unit-тесты запускаются отдельно: `PYTHONPATH=src python3 -B -m unittest discover -s tests -v`.
+Проверки `prototype-tests` пока не добавлены в обязательную защиту ветки — настройка полного CI остаётся BP-22.
 
 ## Будущая установка
 
