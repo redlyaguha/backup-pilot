@@ -1,0 +1,56 @@
+# BP-07: Smoke и начальные тесты сквозного сценария
+
+Дата: 07.11.2026
+Проверяющий: Ника (локально), Алексей (на Astra)
+
+## 1. Локальный прогон (Windows, Python 3.11)
+
+Команда: PYTHONPATH=src python -m unittest tests.test_e2e -v
+Результат: PASS (2/2). Оба новых теста прошли успешно (включая сравнение байтов).
+
+## 2. Прогон на Astra (Smoke)
+
+Среда: Установленная Astra SE 1.8.1.6 x86_64, Python 3.11.2, непривилегированный пользователь bpuser, /dev/vda2 ext4 (не Live).
+Проверенный commit: e326681 (до добавления байтового сравнения).
+Команда: PYTHONPATH=src PYTHONDONTWRITEBYTECODE=1 python3 -S -B -m unittest discover -s tests -v
+Фактический вывод (обезличенный):
+18 PASS / 0 SKIP, включая оба новых теста (test_e2e_backup_with_exclusions, test_missing_source_fails_red).
+
+Примечание: Это не продуктовый verify BP-09 (сравнение SHA-256 манифеста) и не полная приёмка A1–A5.
+Задача BP-07 покрывает начальный smoke-сценарий.
+
+## 3. Повторный прогон исправленного E2E, 12.11.2026
+
+Проверяющий: Алексей. Источник — его фактический журнал в ревью:
+https://github.com/redlyaguha/backup-pilot/pull/42#pullrequestreview-5869562474
+Проверенный commit: 6747f6990ea35d43bf4c67ca94207fe0912690b4.
+Запуск: 12.11.2026, 08:24:15 МСК (05:24:15 UTC).
+Среда: установленная Astra SE 1.8.1.6 x86_64, Python 3.11.2,
+непривилегированный bpuser (UID 1001), корень /dev/vda2 ext4, не Live.
+
+```text
+PYTHONPATH=src PYTHONDONTWRITEBYTECODE=1 python3 -S -B -m unittest discover -s tests -v
+Ran 18 tests in 15.140s
+OK
+PASS fault injection: E2E rejected empty output on the byte assertion
+```
+
+Это новый прогон после добавления сравнения байтов. Старый журнал e326681
+сохранён выше как история. Повторный запуск на macOS также прошёл, по тому же ревью.
+
+## 4. Обновление от dev и локальная проверка, 12.11.2026
+
+Включена dev db9541ac5922e3ff3937d5e355aa94ccaf568c7c обычным merge;
+получен commit 85cb66b41b2c4e71173d2c1e06117a61ec2e16b8.
+На этом merge-коммите src, tests, запускатель и workflow совпадают с 6747f699;
+последующая правка tests/test_e2e.py удаляет только пробелы в пустых строках.
+
+Локально на Windows/Python 3.11 выполнено:
+PYTHONPATH=src python -B -m unittest discover -s tests
+Результат: 15 PASS / 3 Unix SKIP из 18 тестов. Repository checker прошёл.
+Отдельная подмена copy2 записью пустого файла: PASS — E2E падает именно
+на сравнении байтов исходного файла и копии.
+
+Полный прогон на Astra для нового интеграционного head: NOT RUN.
+Результат из раздела 3 относится к указанному там коммиту; новая интеграционная
+проверка и действующее ревью остаются условием завершения BP-07.
