@@ -4,7 +4,7 @@ from pathlib import Path
 import sys
 
 from . import __version__
-from .backup import execute_backup, list_snapshots, plan_backup
+from .backup import execute_backup, list_snapshots, plan_backup, preview_lines
 from .errors import BackupPilotError
 from .integrity import verify_snapshot
 from .profiles import list_profiles, load_named_profile, load_profile
@@ -53,12 +53,9 @@ def main(argv=None) -> int:
                 plan = plan_backup(profile)
                 
                 if getattr(args, 'dry_run', False):
-                    # Восстанавливаем точный вывод dry-run из BP-08
-                    print(f'Назначение: "{profile.destination / profile.name}"')
-                    for relative in plan.directories:
-                        print(f'mkdir "{relative.as_posix()}"')
-                    for entry in plan.files:
-                        print(f'copy "{entry.relative.as_posix()}"')
+                    # Используем родную функцию из BP-08 для вывода
+                    for line in preview_lines(plan):
+                        print(line)
                     return 0
                     
                 snapshot = execute_backup(plan)
