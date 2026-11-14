@@ -4,8 +4,9 @@ from pathlib import Path
 import sys
 
 from . import __version__
-from .backup import execute_backup, list_snapshots, plan_backup, preview_lines
+from .backup import execute_backup, list_snapshots, plan_backup
 from .errors import BackupPilotError
+from .integrity import verify_snapshot
 from .profiles import list_profiles, load_named_profile, load_profile
 
 
@@ -15,16 +16,23 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument('--profiles-dir', type=Path, default=Path('/etc/backup-pilot/profiles.d'),
                         help='каталог именных TOML-профилей')
     commands = result.add_subparsers(dest='command', required=True)
+    
     profiles = commands.add_parser('profiles', help='список и проверка профилей')
     operations = profiles.add_subparsers(dest='operation', required=True)
     operations.add_parser('list', help='показать профили')
     validate = operations.add_parser('validate', help='проверить TOML без записи')
     validate.add_argument('--config', required=True, type=Path)
-    for name, help_text in (('run', 'создать отдельную копию'), ('snapshots', 'перечислить завершённые копии')):
+    
+    for name, help_text in (('run', 'создать отдельную копию'), 
+                            ('snapshots', 'перечислить завершённые копии'),
+                            ('verify', 'проверить целостность снапшота')):
         command = commands.add_parser(name, help=help_text)
         command.add_argument('profile', help='имя TOML-профиля без расширения')
+        if name == 'verify':
+            command.add_argument('snapshot', help='ID снапшота для проверки')
         if name == 'run':
-            command.add_argument('--dry-run', action='store_true', help='показать план без записи')
+            command.add_argument('--dry-run', action='store_true', help='только показать план, без записи')
+            
     return result
 
 
@@ -40,17 +48,28 @@ def main(argv=None) -> int:
                 print(f'Профиль {profile.name}: OK')
         else:
             profile = load_named_profile(args.profiles_dir, args.profile)
+            
             if args.command == 'run':
-                plan = plan_backup(profile)
-                if args.dry_run:
-                    print('\n'.join(preview_lines(plan)))
-                else:
-                    snapshot = execute_backup(plan)
-                    print(f'Копирование завершено: {snapshot}')
-                    print('SHA-256 ещё не проверен: модуль integrity — BP-09.')
-            else:
+                # Вот тут мы восстанавливаем правильный dry-run из BP-08
+                if getattr(args, 'dry_run', False):
+                    plan = plan_backup(profile)
+                    for relative in plan.directories:
+                        print(f'mkdir "{relative.as_posix()}"')
+                    for entry in plan.files:
+                        print(f'copy "{entry.relative.as_posix()}"')
+                    return 0
+                    
+                snapshot = execute_backup(plan_backup(profile))
+                print(f'Копирование завершено: {snapshot}')
+                print('SHA-256 проверен и записан в manifest.json.')
+                
+            elif args.command == 'snapshots':
                 for snapshot in list_snapshots(profile):
                     print(snapshot.name)
+                    
+            elif args.command == 'verify':
+                verify_snapshot(profile, args.snapshot)
+                
         return 0
     except BackupPilotError as exc:
         print(f'Ошибка: {exc}', file=sys.stderr)
