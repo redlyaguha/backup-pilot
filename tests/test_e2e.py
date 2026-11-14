@@ -12,7 +12,7 @@ class SmokeTest(unittest.TestCase):
             src = root / "source"
             dest = root / "destination"
             profiles = root / "profiles"
-            
+
             src.mkdir()
             dest.mkdir()
             profiles.mkdir()
@@ -34,14 +34,14 @@ schedule = "daily"
 
             # Запускаем CLI (команду run demo)
             exit_code = main(["--profiles-dir", str(profiles), "run", "demo"])
-            
+
             # Проверяем, что команда завершилась успешно (exit 0)
             self.assertEqual(exit_code, 0, "CLI вернул ошибку")
 
             # Проверяем, что снапшот создался
             snapshots = list((dest / "demo").iterdir())
             self.assertEqual(len(snapshots), 1, "Снапшот не создан")
-            
+
             # Проверяем содержимое снапшота
             snapshot_data = snapshots[0] / "data"
             self.assertTrue((snapshot_data / "keep.txt").exists(), "Обычный файл не скопирован")

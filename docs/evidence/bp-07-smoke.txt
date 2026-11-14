@@ -8,7 +8,7 @@
 Команда: PYTHONPATH=src python -m unittest tests.test_e2e -v
 Результат: PASS (2/2). Оба новых теста прошли успешно (включая сравнение байтов).
 
-## 2. Прогон на Astra
+## 2. Прогон на Astra (обновленный head)
 
 Среда: Установленная Astra SE 1.8.1.6 x86_64, Python 3.11.2, VirtualBox, непривилегированный bpuser.
 Commit: 4d9b0e0 (актуальный head с учетом dev)
@@ -24,3 +24,9 @@ test_nested_paths (test_profiles.ProfilesTest.test_nested_paths) ... ok
 Ran 18 tests in 0.593s
 
 OK
+
+## 3. Предыдущие прогоны (история)
+
+Среда: Установленная Astra SE 1.8.1.6 x86_64, Python 3.11.2, непривилегированный пользователь bpuser.
+- Прогон от 12.11.2026 (Алексей): commit 6747f6990ea35d43bf4c67ca94207fe0912690b4, 18 tests OK.
+- Прогон от 12.11.2026 (Алексей): commit e326681, 18 PASS / 0 SKIP (до добавления байтового сравнения).
