@@ -50,16 +50,18 @@ def main(argv=None) -> int:
             profile = load_named_profile(args.profiles_dir, args.profile)
             
             if args.command == 'run':
-                # Вот тут мы восстанавливаем правильный dry-run из BP-08
+                plan = plan_backup(profile)
+                
                 if getattr(args, 'dry_run', False):
-                    plan = plan_backup(profile)
+                    # Восстанавливаем точный вывод dry-run из BP-08
+                    print(f'Назначение: "{profile.destination / profile.name}"')
                     for relative in plan.directories:
                         print(f'mkdir "{relative.as_posix()}"')
                     for entry in plan.files:
                         print(f'copy "{entry.relative.as_posix()}"')
                     return 0
                     
-                snapshot = execute_backup(plan_backup(profile))
+                snapshot = execute_backup(plan)
                 print(f'Копирование завершено: {snapshot}')
                 print('SHA-256 проверен и записан в manifest.json.')
                 
