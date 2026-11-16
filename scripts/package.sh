@@ -31,7 +31,9 @@ trap cleanup EXIT INT TERM
 # application code -> /usr/lib/backup-pilot
 install -d -m 755 "$STAGE/usr/lib/backup-pilot"
 cp -R "$ROOT/src/backup_pilot" "$STAGE/usr/lib/backup-pilot/"
-rm -rf "$STAGE/usr/lib/backup-pilot/backup_pilot/__pycache__"
+find "$STAGE" -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
+find "$STAGE" -name '._*' -delete 2>/dev/null || true
+find "$STAGE" -name '.DS_Store' -delete 2>/dev/null || true
 
 # launcher -> /usr/bin
 install -d -m 755 "$STAGE/usr/bin"
