@@ -55,6 +55,8 @@ def plan_backup(profile: Profile) -> BackupPlan:
                 if not excluded(relative.as_posix() + '/'):
                     visit(path)
             elif stat.S_ISREG(mode):
+                with path.open('rb'):
+                    pass
                 files.append(FileEntry(relative, file_signature(path)))
             else:
                 raise BackupPilotError(f'Symlink и специальные файлы не поддерживаются: {path}. Исключите путь.')
@@ -62,6 +64,17 @@ def plan_backup(profile: Profile) -> BackupPlan:
     visit(profile.source)
     return BackupPlan(profile, tuple(sorted(directories, key=lambda p: p.as_posix())),
                       tuple(sorted(files, key=lambda f: f.relative.as_posix())))
+
+
+def preview_lines(plan: BackupPlan) -> list[str]:
+    """Render the same plan consumed by execute_backup; never allocate a snapshot."""
+    def quoted(path: Path) -> str:
+        return json.dumps(path.as_posix(), ensure_ascii=True)
+
+    destination = plan.profile.destination / plan.profile.name / '<new-snapshot>' / 'data'
+    return [f'Назначение: {quoted(destination)}',
+            f'mkdir {quoted(Path("."))}', *(f'mkdir {quoted(path)}' for path in plan.directories),
+            *(f'copy {quoted(entry.relative)}' for entry in plan.files)]
 
 
 def execute_backup(plan: BackupPlan) -> Path:
