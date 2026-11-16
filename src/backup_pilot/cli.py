@@ -1,11 +1,12 @@
 """The CLI delegates filesystem operations to services."""
 import argparse
 from pathlib import Path
+import subprocess
 import sys
 
 from . import __version__
 from .backup import execute_backup, list_snapshots, plan_backup, preview_lines
-from .errors import BackupPilotError
+from .errors import BackupPilotError, user_error
 from .profiles import list_profiles, load_named_profile, load_profile
 
 
@@ -52,12 +53,7 @@ def main(argv=None) -> int:
                 for snapshot in list_snapshots(profile):
                     print(snapshot.name)
         return 0
-    except BackupPilotError as exc:
-        print(f'Ошибка: {exc}', file=sys.stderr)
-        return exc.code
-    except PermissionError as exc:
-        print(f'Ошибка доступа: {exc.filename or "путь"}. Проверьте права пользователя.', file=sys.stderr)
-        return 3
-    except OSError as exc:
-        print(f'Ошибка ввода-вывода: {exc}. Проверьте пути и свободное место.', file=sys.stderr)
-        return 4
+    except (BackupPilotError, OSError, subprocess.SubprocessError) as exc:
+        error = user_error(exc)
+        print(f'Ошибка: {error}', file=sys.stderr)
+        return error.code
