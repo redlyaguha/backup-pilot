@@ -49,6 +49,10 @@ def read_drop_in(path: Path) -> DropInState:
         return DropInState(None, 0o644, path.parent.is_dir())
     if not stat.S_ISREG(info.st_mode):
         raise BackupPilotError(f'Настройка расписания должна быть обычным файлом: {path}.')
+    for candidate in (path.parent, path):
+        entry = candidate.lstat()
+        if entry.st_uid != os.geteuid() or entry.st_mode & 0o022:
+            raise BackupPilotError(f'Небезопасный владелец или права настройки: {candidate}.', 3)
     return DropInState(path.read_bytes(), stat.S_IMODE(info.st_mode), True)
 
 

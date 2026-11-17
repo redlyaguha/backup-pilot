@@ -122,3 +122,19 @@ class ScheduleTransactionTest(unittest.TestCase):
         self.assertFalse(self.active)
         self.assertFalse(self.enabled)
         self.assertEqual(self.scheduler.drop_in.read_bytes(), original)
+
+    def test_successful_change_of_running_timer(self):
+        self.apply('daily')
+        self.apply('weekly')
+        self.assertIn(b'OnCalendar=weekly', self.scheduler.drop_in.read_bytes())
+        self.assertTrue(self.active)
+        self.assertTrue(self.enabled)
+
+    def test_unsafe_existing_drop_in_is_rejected(self):
+        self.apply('daily')
+        self.scheduler.drop_in.chmod(0o666)
+        with self.assertRaises(BackupPilotError) as error:
+            self.apply('weekly')
+        self.assertEqual(error.exception.code, 3)
+        self.assertTrue(self.active)
+        self.assertIn(b'OnCalendar=daily', self.scheduler.drop_in.read_bytes())
