@@ -7,6 +7,7 @@ import sys
 from . import __version__
 from .backup import execute_backup, list_snapshots, plan_backup, preview_lines
 from .errors import BackupPilotError, user_error
+from .retention import plan_retention, apply_retention
 from .integrity import verify_snapshot
 from .profiles import list_profiles, load_named_profile, load_profile
 
@@ -22,9 +23,13 @@ def parser() -> argparse.ArgumentParser:
     operations.add_parser('list', help='показать профили')
     validate = operations.add_parser('validate', help='проверить TOML без записи')
     validate.add_argument('--config', required=True, type=Path)
-    for name, help_text in (('run', 'создать отдельную копию'), ('snapshots', 'перечислить завершённые копии'), ('verify', 'проверить SHA-256')):
+    for name, help_text in (('run', 'создать отдельную копию'), ('snapshots', 'перечислить завершённые копии'), ('verify', 'проверить SHA-256'), ('prune', 'удалить старые версии')):
         command = commands.add_parser(name, help=help_text)
         command.add_argument('profile', help='имя TOML-профиля без расширения')
+        if name == 'prune':
+            mode = command.add_mutually_exclusive_group()
+            mode.add_argument('--apply', action='store_true')
+            mode.add_argument('--dry-run', action='store_true')
         if name == 'verify':
             command.add_argument('snapshot')
         if name == 'run':
@@ -52,6 +57,11 @@ def main(argv=None) -> int:
                     snapshot = execute_backup(plan)
                     print(f'Копирование завершено: {snapshot}')
                     print('SHA-256 записан в manifest.json.')
+            elif args.command == 'prune':
+                plan = apply_retention(profile) if args.apply else plan_retention(profile)
+                import json
+                for item in plan.remove:
+                    print(('Удалено: ' if args.apply else 'Удалить: ') + json.dumps(item.name))
             elif args.command == 'verify':
                 verify_snapshot(profile, args.snapshot)
                 print('Snapshot: OK')
