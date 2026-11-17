@@ -4,7 +4,7 @@
 
 | Задача | Результат сверки |
 |---|---|
-| [BP-01](https://github.com/redlyaguha/backup-pilot/issues/1) | Открыта: нет явного подтверждения тестируемости архитектуры Никой. |
+| [BP-01](https://github.com/redlyaguha/backup-pilot/issues/1) | Закрыта по решению владельца: результат принят слиянием #35; отдельное подтверждение Ники снято как условие закрытия. |
 | [BP-02](https://github.com/redlyaguha/backup-pilot/issues/2) | Закрыта: PR #33 и evidence стенда; критерии отмечены. |
 | [BP-03](https://github.com/redlyaguha/backup-pilot/issues/3) | Закрыта: PR #41, карта испытаний отделяет план от факта. |
 | [BP-04](https://github.com/redlyaguha/backup-pilot/issues/4) | Закрыта: PR #36; CLI и TOML проверены. |
@@ -15,7 +15,7 @@
 | [BP-09](https://github.com/redlyaguha/backup-pilot/issues/9) | Открыта: исправленный #44, нужны независимое ревью и интеграция. |
 | [BP-10](https://github.com/redlyaguha/backup-pilot/issues/10) | Открыта: обновлённый #43; нужны ревью и системная проверка обновлённого кода. |
 | [BP-11](https://github.com/redlyaguha/backup-pilot/issues/11) | Открыта: нет отдельного результата полной проверки A1/A3/A5 на итоговой интеграции. |
-| [BP-12](https://github.com/redlyaguha/backup-pilot/issues/12) | Открыта: #39 слит, но verify/schedule ещё в PR. |
+| [BP-12](https://github.com/redlyaguha/backup-pilot/issues/12) | Закрыта по принятому #39. Оставшаяся общая проверка ошибок scheduler/verify сохранена в BP-13. |
 | [BP-13](https://github.com/redlyaguha/backup-pilot/issues/13) | Открыта: интеграция, BP-11 и командная приёмка не завершены. |
 | [BP-14](https://github.com/redlyaguha/backup-pilot/issues/14) | Открыта: PR #45, зависит от #44 и ревью. |
 | [BP-15](https://github.com/redlyaguha/backup-pilot/issues/15) | Открыта: restore пока отсутствует. |
@@ -36,3 +36,5 @@
 | [BP-30](https://github.com/redlyaguha/backup-pilot/issues/30) | Открыта: результат критериев не подтверждён; зависимости ещё не завершены, оснований закрывать нет. |
 | [BP-31](https://github.com/redlyaguha/backup-pilot/issues/31) | Открыта: результат критериев не подтверждён; зависимости ещё не завершены, оснований закрывать нет. |
 | [BP-32](https://github.com/redlyaguha/backup-pilot/issues/32) | Открыта: результат критериев не подтверждён; зависимости ещё не завершены, оснований закрывать нет. |
+
+Повторная сверка 17.11.2026: все 32 issues и все PR сопоставлены по результатам. Закрыты BP-01–06, BP-08 и BP-12 (8 задач), открыты 24. Других открытых задач со слитым собственным PR не найдено. Задачи с открытыми PR #40/#42–46 сохраняются до принятия изменений; BP-11/BP-15/BP-17–32 имеют невыполненные критерии.
