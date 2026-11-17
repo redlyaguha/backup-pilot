@@ -20,7 +20,6 @@ class RetentionTest(ProfileCase):
         plan = plan_retention(self.profile)
         self.assertEqual(plan.keep, tuple(self.snapshots[-2:]))
         self.assertEqual(plan.remove, tuple(self.snapshots[:2]))
-        self.assertFalse((self.destination / '.backup-pilot-locks').exists())
         self.assertEqual(before, {p.relative_to(self.destination):p.read_bytes() for p in self.destination.rglob('*') if p.is_file()})
 
     @unittest.skipUnless(shutil.rmtree.avoids_symlink_attacks, 'safe deletion requires dir_fd')

@@ -10,6 +10,7 @@ import shutil
 import stat
 from uuid import uuid4
 
+from .locking import profile_lock
 from .errors import BackupPilotError
 from .profiles import Profile, check_plain_path, validate_paths
 
@@ -79,6 +80,15 @@ def preview_lines(plan: BackupPlan) -> list[str]:
 
 
 def execute_backup(plan: BackupPlan) -> Path:
+    validate_paths(plan.profile)
+    for relative in (*plan.directories, *(item.relative for item in plan.files)):
+        if relative.is_absolute() or not relative.parts or '..' in relative.parts:
+            raise BackupPilotError('Небезопасный относительный путь в плане копирования.')
+    with profile_lock(plan.profile):
+        return _execute_backup_locked(plan)
+
+
+def _execute_backup_locked(plan: BackupPlan) -> Path:
     profile = plan.profile
     validate_paths(profile)
     for relative in (*plan.directories, *(item.relative for item in plan.files)):
