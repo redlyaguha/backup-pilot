@@ -1,0 +1,28 @@
+# BP-09: SHA-256 manifest и команда verify
+
+Дата: 15.11.2026
+Проверяющий: Ника (Nikii-fnchek)
+
+## 1. Локальный прогон (Windows, Python 3.11)
+
+Команда: PYTHONPATH=src python -m unittest discover -s tests -v
+Результат: OK (25 тестов, 4 skipped - Linux-specific).
+
+## 2. Прогон на Astra Linux (Интеграционный head)
+
+Среда: Установленная Astra SE 1.8.1.6 x86_64, Python 3.11.11, VirtualBox, непривилегированный bpuser.
+Commit: c1a0a84 (актуальный head).
+
+Команда: PYTHONPATH=src PYTHONDONTWRITEBYTECODE=1 python3.11 -S -B -m unittest discover -s tests -v
+
+Фактический вывод:
+test_real_special_names_match_preview_and_copy ... ok
+test_verify_cli_exit_code_5 ... ok
+test_verify_corrupted_file ... ok
+test_verify_good_snapshot ... ok
+test_verify_missing_file ... ok
+...
+----------------------------------------------------------------------
+Ran 25 tests in 0.848s
+
+OK
