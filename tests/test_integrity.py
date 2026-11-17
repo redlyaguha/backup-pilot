@@ -41,3 +41,35 @@ class IntegrityTest(ProfileCase):
         (snapshot / 'data' / 'a.txt').write_text('corrupted', encoding='utf-8')
         exit_code = main(['--profiles-dir', str(self.profiles), 'verify', 'demo', snapshot.name])
         self.assertEqual(exit_code, 5)
+
+    def test_invalid_manifest_structures(self):
+        import json
+        for mutation in ('missing_files', 'boolean_schema', 'duplicate', 'escape', 'bad_hash'):
+            snapshot = execute_backup(plan_backup(self.profile))
+            path = snapshot / 'manifest.json'
+            data = json.loads(path.read_text())
+            if mutation == 'missing_files': del data['files']
+            if mutation == 'boolean_schema': data['schema_version'] = True
+            if mutation == 'duplicate': data['files'].append(data['files'][0])
+            if mutation == 'escape': data['files'][0]['path'] = '../outside'
+            if mutation == 'bad_hash': data['files'][0]['sha256'] = 'wrong'
+            path.write_text(json.dumps(data))
+            with self.subTest(mutation=mutation), self.assertRaises(BackupPilotError):
+                verify_snapshot(self.profile, snapshot.name)
+
+    def test_partial_and_escape_id_are_rejected(self):
+        for name in ('../outside', '.partial-example', '/tmp'):
+            with self.subTest(name=name), self.assertRaises(BackupPilotError):
+                verify_snapshot(self.profile, name)
+
+    def test_completion_marker_required(self):
+        snapshot = execute_backup(plan_backup(self.profile))
+        (snapshot / 'snapshot.json').unlink()
+        with self.assertRaises(BackupPilotError):
+            verify_snapshot(self.profile, snapshot.name)
+
+    def test_unlisted_file_rejected(self):
+        snapshot = execute_backup(plan_backup(self.profile))
+        (snapshot / 'data' / 'extra').write_bytes(b'extra')
+        with self.assertRaises(BackupPilotError):
+            verify_snapshot(self.profile, snapshot.name)
