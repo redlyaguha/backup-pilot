@@ -21,7 +21,7 @@ class IntegrityTest(ProfileCase):
         snapshot = execute_backup(plan_backup(self.profile))
         target = snapshot / 'data' / 'a.txt'
         target.write_bytes(b'X' + target.read_bytes()[1:])
-        
+
         with self.assertRaises(BackupPilotError) as error:
             verify_snapshot(self.profile, snapshot.name)
         self.assertEqual(error.exception.code, 5)
@@ -30,7 +30,7 @@ class IntegrityTest(ProfileCase):
     def test_verify_missing_file(self):
         snapshot = execute_backup(plan_backup(self.profile))
         (snapshot / 'data' / 'z.bin').unlink()
-        
+
         with self.assertRaises(BackupPilotError) as error:
             verify_snapshot(self.profile, snapshot.name)
         self.assertEqual(error.exception.code, 5)

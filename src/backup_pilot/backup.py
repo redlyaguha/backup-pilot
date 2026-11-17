@@ -93,40 +93,40 @@ def execute_backup(plan: BackupPlan) -> Path:
     partial.mkdir(mode=0o700)
     data = partial / 'data'
     data.mkdir(mode=0o700)
-    
+
     for relative in plan.directories:
         source = profile.source / relative
         check_plain_path(source)
         if not stat.S_ISDIR(source.stat().st_mode):
             raise BackupPilotError(f'Исходный каталог изменился: {source}. Повторите запуск.', 4)
         (data / relative).mkdir(mode=0o700)
-        
+
     manifest_files = []
-    
+
     for entry in plan.files:
         source = profile.source / entry.relative
         if file_signature(source) != entry.signature:
             raise BackupPilotError(f'Исходный файл изменился: {source}. Повторите запуск.', 4)
-            
+
         dest_file = data / entry.relative
         shutil.copy2(source, dest_file, follow_symlinks=False)
-        
+
         if file_signature(source) != entry.signature:
             raise BackupPilotError(f'Исходный файл изменился при копировании: {source}. Повторите запуск.', 4)
-            
+
         file_hash = hashlib.sha256(dest_file.read_bytes()).hexdigest()
         manifest_files.append({"path": entry.relative.as_posix(), "sha256": file_hash})
-        
+
     metadata = dict(schema_version=1, profile=profile.name, snapshot_id=snapshot_id,
                     completed_at=datetime.now(timezone.utc).isoformat())
     (partial / 'snapshot.json').write_text(json.dumps(metadata, ensure_ascii=False) + '\n', encoding='utf-8')
-    
+
     manifest_data = dict(schema_version=1, profile=profile.name, snapshot_id=snapshot_id, files=manifest_files)
     (partial / 'manifest.json').write_text(json.dumps(manifest_data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-    
+
     if snapshot.exists():
         raise BackupPilotError('Коллизия имени snapshot. Частичная копия сохранена; повторите запуск.', 4)
-        
+
     partial.rename(snapshot)
     return snapshot
 
