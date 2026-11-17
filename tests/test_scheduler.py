@@ -138,3 +138,16 @@ class ScheduleTransactionTest(unittest.TestCase):
         self.assertEqual(error.exception.code, 3)
         self.assertTrue(self.active)
         self.assertIn(b'OnCalendar=daily', self.scheduler.drop_in.read_bytes())
+
+    def test_real_lock_contention_before_systemctl(self):
+        import fcntl
+        descriptor = os.open(self.scheduler.unit_dir, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            with patch('backup_pilot.scheduler.os.geteuid',return_value=0):
+                with self.assertRaises(BackupPilotError) as error:
+                    with self.scheduler._lock():
+                        self.fail('entered occupied lock')
+            self.assertEqual(error.exception.code,6)
+        finally:
+            os.close(descriptor)
