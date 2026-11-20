@@ -15,11 +15,30 @@ copy "a\ncopy nonexistent.txt"
 кавычки, обратный слеш и не-ASCII символы экранируются; каждая операция занимает
 одну строку. Preview не создаёт каталоги или копии.
 
+## Проверка и безопасное восстановление
+
+После `run` получите идентификатор командой `snapshots`, затем сначала проверьте
+целостность и план восстановления:
+
+```sh
+backup-pilot --profiles-dir /etc/backup-pilot/profiles.d snapshots demo
+backup-pilot --profiles-dir /etc/backup-pilot/profiles.d verify demo <snapshot-id>
+backup-pilot --profiles-dir /etc/backup-pilot/profiles.d restore demo <snapshot-id> --dry-run
+backup-pilot --profiles-dir /etc/backup-pilot/profiles.d restore demo <snapshot-id> --to /srv/restore/demo-copy
+```
+
+Без `--to` результат появится в новом каталоге
+`./restored/<profile>-<snapshot-id>`. Цель всегда должна отсутствовать: существующие
+файлы, исходный каталог и каталог backup не перезаписываются. До копирования
+проверяются `snapshot.json`, `manifest.json`, безопасные относительные пути и
+SHA-256 каждого файла. `--dry-run` не создаёт целевой каталог и не берёт блокировку.
+
 Для расписания используйте `backup-pilot schedule demo status`. Подготовка профиля,
 preview, включение и отключение описаны в [руководстве администратора](admin-guide.md#расписание-systemd-bp-10).
 
-**Проект пользовательского пути:** установка пакета, verify, restore и prune
-входят в следующие задачи. Проверка полного руководства входит в BP-19 и BP-26.
+**Статус руководства:** команды verify и restore описаны фактически; установка
+пакета, полный сценарий retention и независимая проверка руководства остаются в
+BP-19 и BP-26.
 
 Пользовательский путь: установить проверенный `.deb` → создать профиль по примеру → validate →
 `run <profile> --dry-run` → `run <profile>` → `snapshots` → `verify` → `restore` в новый каталог.
