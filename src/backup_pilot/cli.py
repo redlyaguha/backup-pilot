@@ -8,6 +8,7 @@ from . import __version__
 from .backup import execute_backup, list_snapshots, plan_backup, preview_lines
 from .errors import BackupPilotError, user_error
 from .integrity import verify_snapshot
+from .restore import default_target, preview_restore, restore_snapshot
 from .profiles import list_profiles, load_named_profile, load_profile
 from .scheduler import Scheduler, validate_calendar
 
@@ -26,11 +27,15 @@ def parser() -> argparse.ArgumentParser:
     operations.add_parser('list', help='показать профили')
     validate = operations.add_parser('validate', help='проверить TOML без записи')
     validate.add_argument('--config', required=True, type=Path)
-    for name, help_text in (('run', 'создать отдельную копию'), ('snapshots', 'перечислить завершённые копии'), ('verify', 'проверить SHA-256')):
+    for name, help_text in (('run', 'создать отдельную копию'), ('snapshots', 'перечислить завершённые копии'), ('verify', 'проверить SHA-256'), ('restore', 'восстановить snapshot в новый каталог')):
         command = commands.add_parser(name, help=help_text)
         command.add_argument('profile', help='имя TOML-профиля без расширения')
         if name == 'verify':
             command.add_argument('snapshot')
+        if name == 'restore':
+            command.add_argument('snapshot')
+            command.add_argument('--to', type=Path)
+            command.add_argument('--dry-run', action='store_true')
         if name == 'run':
             command.add_argument('--dry-run', action='store_true', help='показать план без записи')
     schedule = commands.add_parser('schedule', help='управлять системным расписанием профиля')
@@ -80,6 +85,11 @@ def main(argv=None) -> int:
             elif args.command == 'verify':
                 verify_snapshot(profile, args.snapshot)
                 print('Snapshot: OK')
+            elif args.command == 'restore':
+                target = args.to or default_target(profile, args.snapshot)
+                target = (preview_restore(profile, args.snapshot, target) if args.dry_run
+                          else restore_snapshot(profile, args.snapshot, target))
+                print(('Would restore to: ' if args.dry_run else 'Restored to: ') + str(target))
             else:
                 for snapshot in list_snapshots(profile):
                     print(snapshot.name)
