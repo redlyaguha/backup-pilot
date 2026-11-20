@@ -6,7 +6,6 @@ from uuid import uuid4
 
 from .errors import BackupPilotError
 from .integrity import read_manifest, verify_snapshot
-from .locking import profile_lock
 from .profiles import check_plain_path, validate_paths
 
 
@@ -46,23 +45,22 @@ def restore_snapshot(profile, snapshot_id, target):
     """Copy a verified snapshot into a new directory, then publish it atomically."""
     validate_paths(profile)
     target = _validate_target(profile, target)
-    with profile_lock(profile):
-        target = _validate_target(profile, target)
-        verify_snapshot(profile, snapshot_id)
-        snapshot, files = read_manifest(profile, snapshot_id)
-        target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-        check_plain_path(target.parent)
-        partial = target.parent / ('.partial-restore-' + uuid4().hex)
-        partial.mkdir(mode=0o700)
-        for item in files:
-            relative = Path(item['path'])
-            output = partial / relative
-            output.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-            _copy_verified(snapshot / 'data' / relative, output, item['sha256'])
-        if target.exists():
-            raise BackupPilotError(f'Restore target already exists: {target}.')
-        partial.rename(target)
-        return target
+    target = _validate_target(profile, target)
+    verify_snapshot(profile, snapshot_id)
+    snapshot, files = read_manifest(profile, snapshot_id)
+    target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    check_plain_path(target.parent)
+    partial = target.parent / ('.partial-restore-' + uuid4().hex)
+    partial.mkdir(mode=0o700)
+    for item in files:
+        relative = Path(item['path'])
+        output = partial / relative
+        output.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        _copy_verified(snapshot / 'data' / relative, output, item['sha256'])
+    if target.exists():
+        raise BackupPilotError(f'Restore target already exists: {target}.')
+    partial.rename(target)
+    return target
 
 
 def _copy_verified(source, output, expected_hash):
