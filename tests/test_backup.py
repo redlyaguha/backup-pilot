@@ -39,7 +39,7 @@ class BackupTest(ProfileCase):
             self.assertTrue((snapshot / 'data' / 'empty').is_dir())
             for relative in ('notes.tmp', 'sub/nested.tmp', 'cache/item.txt'):
                 self.assertFalse((snapshot / 'data' / relative).exists())
-            self.assertFalse((snapshot / 'manifest.json').exists())
+            self.assertTrue((snapshot / 'manifest.json').exists())
         self.assertEqual(before, {p.relative_to(self.source): p.read_bytes()
                                   for p in self.source.rglob('*') if p.is_file()})
 
@@ -98,7 +98,7 @@ class BackupTest(ProfileCase):
         prefix = ['--profiles-dir', str(self.profiles)]
         with contextlib.redirect_stdout(io.StringIO()) as output:
             self.assertEqual(main(prefix + ['run', 'demo']), 0)
-        self.assertIn('BP-09', output.getvalue())
+        self.assertIn('manifest.json', output.getvalue())
         with contextlib.redirect_stdout(io.StringIO()) as output:
             self.assertEqual(main(prefix + ['snapshots', 'demo']), 0)
         self.assertEqual(output.getvalue().strip(), list_snapshots(self.profile)[0].name)
