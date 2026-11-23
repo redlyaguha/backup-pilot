@@ -1,0 +1,11 @@
+Package: backup-pilot
+Version: 0.1.0
+Architecture: amd64
+Maintainer: Backup Pilot Team <backup-pilot@localhost>
+Depends: python3 (>= 3.11), systemd
+Section: admin
+Priority: optional
+Description: local backup manager for Astra Linux SE 1.8
+ Менеджер локальных резервных копий с профилями источник/назначение/исключения,
+ расписанием через systemd timer, dry-run, retention, контрольными суммами и
+ безопасным восстановлением в отдельный каталог.

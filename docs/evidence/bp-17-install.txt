@@ -1,0 +1,63 @@
+# BP-17: сборка и установка первого backup-pilot .deb
+
+Дата: 2026-11-23 (UTC)
+Проверяющий: Алексей (LikhachevAlexey)
+Исходный commit: 4338e889a2776ce72c8c1e6fa98bad58ced81f8a
+
+## Среда
+
+Установленная Astra SE 1.8.1, ядро 6.1.90-1-generic, Python 3.11.2,
+корень /dev/vda2 ext4 (не Live). Администратор bpadmin (astra-admin, sudo);
+системный пользователь backup-pilot создаётся postinst.
+
+## Сборка
+
+```sh
+sh scripts/package.sh
+```
+
+Результат: `dist/backup-pilot_0.1.0_amd64.deb`.
+
+Состав пакета (`dpkg-deb -c`):
+
+```text
+/etc/backup-pilot/profiles.d/
+/lib/systemd/system/backup-pilot@.service
+/lib/systemd/system/backup-pilot@.timer
+/usr/bin/backup-pilot
+/usr/lib/backup-pilot/backup_pilot/*.py
+/var/lib/backup-pilot/
+```
+
+В пакете нет `.git`, venv, кэша (`__pycache__`/`*.pyc`), macOS-метафайлов
+(`._*`, `.DS_Store`) и секретов.
+
+## Установка и проверка
+
+```sh
+$ sudo apt install ./dist/backup-pilot_0.1.0_amd64.deb
+Setting up backup-pilot (0.1.0) ...
+Adding system user `backup-pilot' (UID 102) with group `backup-pilot' ...
+
+$ backup-pilot --version
+backup-pilot 0.1.0
+
+$ backup-pilot --help
+usage: backup-pilot [-h] [--version] [--profiles-dir PROFILES_DIR]
+                    {profiles,run,snapshots,schedule} ...
+    profiles    список и проверка профилей
+    run         создать отдельную копию
+    snapshots   перечислить завершённые копии
+    schedule    управлять системным расписанием профиля
+
+$ dpkg -L backup-pilot
+/etc/backup-pilot/profiles.d
+/lib/systemd/system/backup-pilot@.service
+/lib/systemd/system/backup-pilot@.timer
+/usr/bin/backup-pilot
+/usr/lib/backup-pilot/backup_pilot/...
+/var/lib/backup-pilot
+```
+
+Установка, `--help`, `--version` и `dpkg -L` выполняются без каталога исходников
+и dev-venv. Обновление/удаление (BP-20) и политика conffiles проверяются отдельно.

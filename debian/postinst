@@ -1,0 +1,16 @@
+#!/bin/sh
+set -e
+
+# Create the unprivileged system user used by backup-pilot@.service.
+# Idempotent: safe to run on every install/upgrade.
+
+if ! getent group backup-pilot >/dev/null 2>&1; then
+    addgroup --system backup-pilot
+fi
+
+if ! getent passwd backup-pilot >/dev/null 2>&1; then
+    adduser --system --ingroup backup-pilot --no-create-home \
+        --disabled-login --shell /usr/sbin/nologin backup-pilot
+fi
+
+exit 0
