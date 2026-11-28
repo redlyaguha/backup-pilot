@@ -1,0 +1,30 @@
+# BP-19: Проверка пользовательской документации
+
+Дата: 28.11.2026
+Проверяющий: Ника (Nikii-fnchek)
+Среда: Astra SE 1.8.1.6 x86_64, Python 3.11.2, пользователь bpuser.
+Commit: 95d144e
+
+## Проверка команд из User Guide
+
+$ python3.11 -B backup-pilot --profiles-dir /tmp/bp19 profiles validate --config /tmp/bp19/demo.toml
+Профиль demo: OK
+
+$ python3.11 -B backup-pilot --profiles-dir /tmp/bp19 run demo --dry-run
+Назначение: "/tmp/bp19/backups/demo"
+copy "file1.txt"
+
+$ python3.11 -B backup-pilot --profiles-dir /tmp/bp19 run demo
+Копирование завершено: /tmp/bp19/backups/demo/20261128T...
+SHA-256 записан в manifest.json.
+
+$ python3.11 -B backup-pilot --profiles-dir /tmp/bp19 snapshots demo
+20261128T...
+
+$ python3.11 -B backup-pilot --profiles-dir /tmp/bp19 verify demo 20261128T...
+Snapshot: OK
+
+$ python3.11 -B backup-pilot --profiles-dir /tmp/bp19 restore demo 20261128T... --to /tmp/bp19/restored
+Restored to: /tmp/bp19/restored
+
+Статус: PASS. Команды в user-guide.md соответствуют фактическому поведению CLI.
