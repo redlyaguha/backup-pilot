@@ -1,0 +1,28 @@
+# BP-11, BP-15, BP-18: Интеграционная проверка на Astra Linux
+
+Дата: 28.11.2026
+Проверяющий: Ника (Nikii-fnchek)
+Среда: Astra SE 1.8.1.6 x86_64, Python 3.11.2, непривилегированный пользователь bpuser.
+Commit: 0b2425e (Ветка feature/BP-18-full-cycle, включающая код BP-11, BP-15 и BP-18).
+
+## Результаты прогона на Astra
+
+Команда: PYTHONPATH=src PYTHONDONTWRITEBYTECODE=1 python3.11 -S -B -m unittest discover -s tests -v
+
+Фактический вывод (фрагмент):
+test_a1_and_a3_exclude_files_and_dry_run_changes_nothing (test_bp11_acceptance.BP11AcceptanceTest...) ... ok
+test_a5_corrupt_manifest_refuses_without_modifying_existing_data (test_bp11_acceptance.BP11AcceptanceTest...) ... ok
+test_real_unix_read_permissions (test_errors.ErrorsTest...) ... ok
+test_restore_preserves_binary_bytes_in_new_target (test_restore.RestoreTest...) ... ok
+test_apply_preserves_foreign_partial_and_minimum_one (test_retention.RetentionTest...) ... ok
+test_profile_backup_verify_restore_and_retention (test_bp18_acceptance.BP18AcceptanceTest...) ... ok
+...
+----------------------------------------------------------------------
+Ran 64 tests in 1.821s
+
+OK
+
+## Закрытые пункты:
+- **BP-11:** Linux-проверка непривилегированного пользователя (exit 3 при отсутствии прав) — PASS. Astra SE 1.8 — PASS.
+- **BP-15:** Восстановление (restore) на Astra, безопасные пути и побайтное сравнение — PASS.
+- **BP-18:** POSIX-safe delete в retention (безопасное удаление на Linux) — PASS. Проверка полного сквозного цикла на Astra — PASS.
